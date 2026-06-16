@@ -23,3 +23,6 @@ npm-debug.log*
 
 # test coverage
 coverage
+
+# generated content cache (run `npm run fetch:content` to populate)
+public/content/

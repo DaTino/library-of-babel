@@ -425,6 +425,23 @@ body {
   border-top: 1px solid rgba(150, 140, 120, 0.25);
 }
 
+.reader__more {
+  display: block;
+  margin: 1.5rem 0;
+  padding: 0.6rem 1rem;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid rgba(150, 140, 120, 0.5);
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+
+.reader__more:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 /* ---- Credits / Sources (§7.3) ---- */
 .overlay--credits {
   align-items: center;

@@ -18,7 +18,10 @@ export function CameraRig({ room }: { room: Room }) {
     const { position, yaw } = entryTransform(room, useMuseumStore.getState().entryFromRoomId);
     camera.position.set(position[0], position[1], position[2]);
     camera.rotation.set(0, yaw, 0);
-  }, [room, camera]);
+    // Reposition only on an actual room change, not when content hot-swaps in
+    // from the cache (§8) — the room id is stable across that swap.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room.id, camera]);
 
   return null;
 }

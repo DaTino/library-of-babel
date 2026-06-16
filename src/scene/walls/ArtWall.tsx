@@ -1,7 +1,9 @@
+import { Suspense } from "react";
 import { Billboard } from "@react-three/drei";
 import type { ArtWall as ArtWallModel, BookRef, RoomTheme } from "../../model/types";
 import { wallTransform } from "../../geometry/hexagon";
 import { interactable } from "../../interaction/types";
+import { ArtImage } from "../ArtImage";
 
 const SPINE_COLORS = ["#7a2230", "#3a5f4a", "#2f4a6b", "#6b4f1f", "#4a2f5e", "#205a52"];
 
@@ -13,27 +15,33 @@ export function ArtWall({ wall, theme }: { wall: ArtWallModel; theme: RoomTheme 
   const t = wallTransform(wall.wallIndex);
   const accent = theme.palette[0] ?? "#caa86a";
   const shelfColor = theme.materials.floor ?? "#5a4632";
+  const paintingData = interactable({
+    kind: "painting",
+    id: wall.painting.id,
+    label: wall.painting.title,
+    artwork: wall.painting,
+  });
 
   return (
     <group position={[t.position[0], 0, t.position[2]]} rotation-y={t.rotationY}>
-      {/* framed painting (upper wall) */}
+      {/* framed painting (upper wall) — real cached image when available (§8) */}
       <group position={[0, 3.2, 0.06]}>
         <mesh>
           <planeGeometry args={[2.2, 1.5]} />
           <meshStandardMaterial color="#15110c" roughness={0.6} />
         </mesh>
-        <mesh
-          position={[0, 0, 0.02]}
-          userData={interactable({
-            kind: "painting",
-            id: wall.painting.id,
-            label: wall.painting.title,
-            artwork: wall.painting,
-          })}
-        >
-          <planeGeometry args={[1.9, 1.2]} />
-          <meshStandardMaterial color={accent} roughness={0.5} />
-        </mesh>
+        <group position={[0, 0, 0.02]}>
+          <Suspense
+            fallback={
+              <mesh userData={paintingData}>
+                <planeGeometry args={[1.9, 1.2]} />
+                <meshStandardMaterial color={accent} roughness={0.5} />
+              </mesh>
+            }
+          >
+            <ArtImage url={wall.painting.thumbUrl} width={1.9} height={1.2} userData={paintingData} />
+          </Suspense>
+        </group>
       </group>
 
       {/* bookshelf cabinet */}

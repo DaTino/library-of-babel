@@ -35,14 +35,24 @@ Vite prints a local URL — open it in your browser:
 
 The server hot-reloads as you edit files. Stop it with **Ctrl+C**.
 
+## Load real content (optional)
+
+The app ships with styled placeholders. To populate **real open-licensed art (The Met) and
+full texts (Project Gutenberg)**:
+
+```bash
+npm run fetch:content
+```
+
+This caches images + text under `public/content/` (git-ignored); reload the page to see them.
+
 ## 3. Explore the room
 
 - **Click** anywhere to enter (this locks the mouse pointer to the window).
 - **W A S D** or **arrow keys** to walk.
 - **Move the mouse** to look around.
 - Put the center reticle on an item (painting, book, artifact, or a doorway) — it
-  highlights and shows a label. **Click** to select it (the art viewer / reader open
-  here in Phase 2).
+  highlights and shows a label. **Click** to open the art viewer or reader.
 - **Esc** releases the mouse.
 
 ## All commands
