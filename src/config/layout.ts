@@ -20,6 +20,12 @@ export const FLOORS: FloorConfig[] = [
     title: "Ground Floor",
     ring: ["egypt", "mesoamerica", "greece", "china", "renaissance_italy", "tudor_england"],
   },
+  {
+    id: "floor-2",
+    level: 1,
+    title: "Upper Gallery",
+    ring: ["greece", "renaissance_italy", "tudor_england", "egypt", "china", "mesoamerica"],
+  },
   // To add capacity: append another floor here (its own atrium + 6-room ring).
   // To reorder a floor's ring: reorder its `ring` array.
 ];

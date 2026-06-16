@@ -512,3 +512,28 @@ body {
   border-radius: 0.25rem;
   padding: 0.05rem 0.4rem;
 }
+
+/* ---- Transition fade (§2.4) ---- */
+.fade {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  background: #050507;
+  pointer-events: none;
+  transition: opacity 0.36s ease;
+}
+
+/* ---- Atrium doorway signs (§3.2) ---- */
+.door-sign {
+  font-family: ui-serif, Georgia, serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+  color: var(--fg);
+  background: rgba(7, 7, 10, 0.7);
+  border: 1px solid rgba(194, 162, 90, 0.4);
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.3rem;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+}

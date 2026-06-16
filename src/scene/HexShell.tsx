@@ -1,24 +1,30 @@
 import { useMemo } from "react";
 import { DoubleSide } from "three";
-import type { RoomTheme } from "../model/types";
-import {
-  EXIT_WALL_INDICES,
-  HEX_RADIUS,
-  WALL_HEIGHT,
-  wallTransform,
-  type WallTransform,
-} from "../geometry/hexagon";
+import type { Room } from "../model/types";
+import { HEX_RADIUS, WALL_HEIGHT, wallTransform, type WallTransform } from "../geometry/hexagon";
 
 const DOOR_W = 1.8;
 const DOOR_H = 3;
 
-/** The reusable hexagon shell (§6.1): floor, ceiling, and 6 walls. Exit walls
- *  are drawn as a frame with a central doorway opening. */
-export function HexShell({ theme }: { theme: RoomTheme }) {
+/** The reusable hexagon shell (§6.1): floor, ceiling, and 6 walls. Walls that
+ *  carry a doorway (derived from the room's exits) are drawn as a frame with a
+ *  central opening; the rest are solid. Themed rooms get 3 doorways, the atrium
+ *  gets 6 (§3.2). */
+export function HexShell({ room }: { room: Room }) {
+  const theme = room.theme;
   const floorColor = theme.materials.floor ?? theme.palette[1] ?? "#888888";
   const wallColor = theme.materials.wall ?? theme.palette[2] ?? "#cccccc";
   const ceilColor = theme.palette[1] ?? wallColor;
-  const exitSet = useMemo(() => new Set<number>(EXIT_WALL_INDICES), []);
+
+  const exitSet = useMemo(
+    () =>
+      new Set(
+        room.exits
+          .filter((e) => e.kind === "doorway" && e.wallIndex !== undefined)
+          .map((e) => e.wallIndex as number),
+      ),
+    [room],
+  );
 
   return (
     <group>

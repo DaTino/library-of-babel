@@ -11,7 +11,7 @@ export function Room({ room }: { room: RoomModel }) {
   return (
     <group>
       <RoomLighting theme={room.theme} />
-      <HexShell theme={room.theme} />
+      <HexShell room={room} />
 
       {room.artWalls.map((wall) => (
         <ArtWall key={wall.wallIndex} wall={wall} theme={room.theme} />

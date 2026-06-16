@@ -90,10 +90,10 @@ const THEMES: Record<CultureId, RoomTheme> = {
 };
 
 const ATRIUM_THEME: RoomTheme = {
-  palette: ["#1a1a1f", "#2a2a32", "#c2a25a"],
-  keyLight: { color: "#ffffff", intensity: 0.9 },
-  ambientLight: { color: "#8a8a96", intensity: 0.6 },
-  materials: { floor: "#2a2a32", wall: "#1a1a1f" },
+  palette: ["#3c3c46", "#4a4a54", "#cdb37a"],
+  keyLight: { color: "#fff6e6", intensity: 1.5 },
+  ambientLight: { color: "#9a9aa6", intensity: 0.85 },
+  materials: { floor: "#4a4a54", wall: "#5a5a66" },
 };
 
 export const placeholderContent: ContentProvider = {

@@ -20,8 +20,9 @@ function findInteractable(obj: Object3D | null): Hit | null {
 
 /**
  * Under pointer lock the cursor is centered, so we raycast from screen-center
- * each frame (§6.5): hover → highlight + label, click → open the overlay (§7).
- * Paused while unlocked or while an overlay is open.
+ * each frame (§6.5): hover → highlight + label, click → open an overlay (§7) or
+ * travel through an exit (§2.4). Paused while unlocked, mid-transition, or while
+ * an overlay is open.
  */
 export function useCenterRaycast() {
   const scene = useThree((s) => s.scene);
@@ -29,7 +30,7 @@ export function useCenterRaycast() {
   const setHovered = useMuseumStore((s) => s.setHovered);
   const openArt = useMuseumStore((s) => s.openArt);
   const openReader = useMuseumStore((s) => s.openReader);
-  const noteExit = useMuseumStore((s) => s.noteExit);
+  const requestTravel = useMuseumStore((s) => s.requestTravel);
 
   const ray = useMemo(() => new Raycaster(), []);
   const center = useMemo(() => new Vector2(0, 0), []);
@@ -46,8 +47,8 @@ export function useCenterRaycast() {
   };
 
   useFrame(() => {
-    const { isLocked, overlay } = useMuseumStore.getState();
-    if (!isLocked || overlay !== "none") {
+    const { isLocked, overlay, isTraveling } = useMuseumStore.getState();
+    if (!isLocked || overlay !== "none" || isTraveling) {
       clearHover();
       return;
     }
@@ -85,14 +86,14 @@ export function useCenterRaycast() {
       if (h.kind === "book" && h.book) {
         openReader(h.book);
         document.exitPointerLock();
+      } else if (h.kind === "exit" && h.targetRoomId) {
+        requestTravel(h.targetRoomId); // stays pointer-locked through the fade
       } else if (h.artwork) {
         openArt(h.artwork);
         document.exitPointerLock();
-      } else if (h.kind === "exit") {
-        noteExit(h.label);
       }
     };
     window.addEventListener("pointerdown", onPointerDown);
     return () => window.removeEventListener("pointerdown", onPointerDown);
-  }, [openArt, openReader, noteExit]);
+  }, [openArt, openReader, requestTravel]);
 }

@@ -18,8 +18,9 @@ export function PlayerControls() {
   );
 
   useFrame((_, delta) => {
-    // Movement is locked while a 2D overlay is open (§6.5).
-    if (useMuseumStore.getState().overlay !== "none") return;
+    // Movement is locked while an overlay is open or mid-transition (§6.5 / §2.4).
+    const nav = useMuseumStore.getState();
+    if (nav.overlay !== "none" || nav.isTraveling) return;
     const { forward, back, left, right } = keys.current;
 
     camera.getWorldDirection(tmp.forward);

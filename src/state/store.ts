@@ -12,22 +12,32 @@ export interface Hovered {
 }
 
 interface MuseumState {
-  /** Active room id — drives which scene renders (§2.4). */
+  // --- Navigation (§2.2 / §2.4) ---
+  /** Active room id — drives which scene renders. */
   currentRoomId: string;
+  /** Room we arrived from, so the camera enters at the right doorway. */
+  entryFromRoomId: string | null;
+  /** Target during a transition (set on request, applied at the fade midpoint). */
+  pendingTravel: string | null;
+  isTraveling: boolean;
+
+  // --- Overlays (§7) ---
   overlay: OverlayKind;
   activeArtwork: Artwork | null;
   activeBook: BookRef | null;
-  /** Audio is gated on a user gesture (§6.6); flips true on "enter". */
+
   audioEnabled: boolean;
-  /** Pointer-lock state (drives the "click to enter" prompt). */
   isLocked: boolean;
   hovered: Hovered | null;
-  /** Transient message when an exit is clicked (navigation is Phase 3). */
-  exitToast: string | null;
-  /** In-session reading scroll position per book (§7.2). */
   readingPositions: Record<string, number>;
 
-  goToRoom: (id: string) => void;
+  /** Begin a gentle transition to another room (ignored mid-transition). */
+  requestTravel: (toRoomId: string) => void;
+  /** Swap the active room (called while the screen is faded to black). */
+  commitTravel: () => void;
+  /** End the transition. */
+  endTravel: () => void;
+
   openArt: (artwork: Artwork) => void;
   openReader: (book: BookRef) => void;
   openCredits: () => void;
@@ -35,24 +45,37 @@ interface MuseumState {
   enableAudio: () => void;
   setLocked: (v: boolean) => void;
   setHovered: (h: Hovered | null) => void;
-  noteExit: (label: string) => void;
-  clearExitToast: () => void;
   setReadingPosition: (bookId: string, scrollTop: number) => void;
 }
 
 // Stateless across sessions (§5, Q8): in-memory only, resets on refresh.
 export const useMuseumStore = create<MuseumState>((set) => ({
-  currentRoomId: "floor-1:egypt",
+  currentRoomId: "floor-1:atrium",
+  entryFromRoomId: null,
+  pendingTravel: null,
+  isTraveling: false,
+
   overlay: "none",
   activeArtwork: null,
   activeBook: null,
   audioEnabled: false,
   isLocked: false,
   hovered: null,
-  exitToast: null,
   readingPositions: {},
 
-  goToRoom: (id) => set({ currentRoomId: id }),
+  requestTravel: (toRoomId) =>
+    set((s) =>
+      s.isTraveling || toRoomId === s.currentRoomId
+        ? {}
+        : { pendingTravel: toRoomId, isTraveling: true },
+    ),
+  commitTravel: () =>
+    set((s) => ({
+      currentRoomId: s.pendingTravel ?? s.currentRoomId,
+      entryFromRoomId: s.currentRoomId,
+    })),
+  endTravel: () => set({ isTraveling: false, pendingTravel: null }),
+
   openArt: (artwork) => set({ overlay: "art", activeArtwork: artwork }),
   openReader: (book) => set({ overlay: "reader", activeBook: book }),
   openCredits: () => set({ overlay: "credits" }),
@@ -60,8 +83,6 @@ export const useMuseumStore = create<MuseumState>((set) => ({
   enableAudio: () => set({ audioEnabled: true }),
   setLocked: (v) => set({ isLocked: v }),
   setHovered: (h) => set({ hovered: h }),
-  noteExit: (label) => set({ exitToast: label }),
-  clearExitToast: () => set({ exitToast: null }),
   setReadingPosition: (bookId, scrollTop) =>
     set((s) => ({ readingPositions: { ...s.readingPositions, [bookId]: scrollTop } })),
 }));
