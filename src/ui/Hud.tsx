@@ -2,52 +2,70 @@ import { useEffect } from "react";
 import type { Room } from "../model/types";
 import { useMuseumStore } from "../state/store";
 
-/** 2D overlay over the canvas (§7): title, reticle + hover label, enter prompt,
- *  and a transient click toast. Wayfinding stays deliberately minimal (§7.4). */
+/** 2D heads-up layer over the canvas (§7): title, reticle + hover label, enter
+ *  prompt, Sources button, and a transient exit toast. */
 export function Hud({ room }: { room: Room }) {
   const isLocked = useMuseumStore((s) => s.isLocked);
+  const overlay = useMuseumStore((s) => s.overlay);
   const hovered = useMuseumStore((s) => s.hovered);
-  const lastClicked = useMuseumStore((s) => s.lastClicked);
-  const clearClicked = useMuseumStore((s) => s.clearClicked);
+  const exitToast = useMuseumStore((s) => s.exitToast);
+  const clearExitToast = useMuseumStore((s) => s.clearExitToast);
+  const openCredits = useMuseumStore((s) => s.openCredits);
 
   useEffect(() => {
-    if (!lastClicked) return;
-    const timer = setTimeout(clearClicked, 2400);
+    if (!exitToast) return;
+    const timer = setTimeout(clearExitToast, 2400);
     return () => clearTimeout(timer);
-  }, [lastClicked, clearClicked]);
+  }, [exitToast, clearExitToast]);
+
+  // "C" opens the Sources panel (and frees the pointer so it's usable).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code === "KeyC" && useMuseumStore.getState().overlay === "none") {
+        openCredits();
+        document.exitPointerLock();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [openCredits]);
+
+  const overlayOpen = overlay !== "none";
 
   return (
     <>
       <div className="hud">
         <h1>{room.title}</h1>
-        <p className="hud__sub">Library of Babel · Phase 1</p>
+        <p className="hud__sub">Library of Babel · Phase 2</p>
         <p className="hud__hint">
-          <b>WASD</b> move · <b>mouse</b> look · <b>click</b> items · <b>Esc</b> release
+          <b>WASD</b> move · <b>mouse</b> look · <b>click</b> items · <b>C</b> sources · <b>Esc</b> back
         </p>
       </div>
 
-      <div className="reticle" aria-hidden="true">
-        <span className={`reticle__dot${hovered ? " reticle__dot--active" : ""}`} />
-        {isLocked && hovered && <span className="reticle__label">{hovered.label}</span>}
-      </div>
+      <button className="sources-btn" onClick={openCredits}>
+        Sources
+      </button>
 
-      {!isLocked && (
+      {isLocked && !overlayOpen && (
+        <div className="reticle" aria-hidden="true">
+          <span className={`reticle__dot${hovered ? " reticle__dot--active" : ""}`} />
+          {hovered && <span className="reticle__label">{hovered.label}</span>}
+        </div>
+      )}
+
+      {!isLocked && !overlayOpen && (
         <div className="prompt" aria-hidden="true">
           <p className="prompt__title">Enter the Library</p>
           <p className="prompt__body">
-            Click to explore · <b>WASD</b> to move · <b>mouse</b> to look · <b>Esc</b> to release
+            Click to explore · <b>WASD</b> move · <b>mouse</b> look · <b>Esc</b> release
           </p>
         </div>
       )}
 
-      {lastClicked && (
+      {exitToast && !overlayOpen && (
         <div className="toast" role="status">
-          <b>{lastClicked.label}</b>
-          <span className="toast__note">
-            {lastClicked.kind === "exit"
-              ? "Doorway — walking through arrives in Phase 3"
-              : "Viewer / reader arrives in Phase 2"}
-          </span>
+          <b>{exitToast}</b>
+          <span className="toast__note">Doorway — walking through arrives in Phase 3</span>
         </div>
       )}
     </>

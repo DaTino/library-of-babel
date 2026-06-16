@@ -176,3 +176,339 @@ body {
   color: var(--muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
+
+/* ---- Sources button ---- */
+.sources-btn {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 20;
+  padding: 0.5rem 0.9rem;
+  font-family: ui-serif, Georgia, serif;
+  font-size: 0.85rem;
+  color: var(--fg);
+  background: rgba(7, 7, 10, 0.55);
+  border: 1px solid rgba(194, 162, 90, 0.35);
+  border-radius: 0.4rem;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+
+.sources-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ---- Overlay shell ---- */
+.overlay-root {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  cursor: auto;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: rgba(5, 5, 8, 0.92);
+  backdrop-filter: blur(3px);
+}
+
+.overlay__close {
+  width: 2.2rem;
+  height: 2.2rem;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--fg);
+  background: transparent;
+  border: 1px solid rgba(194, 162, 90, 0.3);
+  border-radius: 0.35rem;
+  cursor: pointer;
+}
+
+.overlay__close:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ---- Art viewer (§7.1) ---- */
+.overlay--art .overlay__close {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.2rem;
+  z-index: 2;
+}
+
+.art-stage {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+}
+
+.art-stage:active {
+  cursor: grabbing;
+}
+
+.art-stage__img {
+  max-width: 80%;
+  max-height: 100%;
+  user-select: none;
+  transition: transform 0.04s linear;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.6);
+}
+
+.art-meta {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: rgba(7, 7, 10, 0.85);
+  border-top: 1px solid rgba(194, 162, 90, 0.2);
+}
+
+.art-meta__title {
+  flex: 1;
+}
+
+.art-meta__title h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--fg);
+}
+
+.art-meta__by {
+  margin: 0.1rem 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.art-meta__controls {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.art-meta__controls button {
+  min-width: 2.2rem;
+  height: 2.2rem;
+  color: var(--fg);
+  background: transparent;
+  border: 1px solid rgba(194, 162, 90, 0.3);
+  border-radius: 0.35rem;
+  cursor: pointer;
+}
+
+.art-meta__controls button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ---- Attribution line (§7.3) ---- */
+.attribution {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.attribution__label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+}
+
+.attribution a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.attribution a:hover {
+  text-decoration: underline;
+}
+
+.attribution__license {
+  padding: 0.05rem 0.4rem;
+  border: 1px solid rgba(194, 162, 90, 0.4);
+  border-radius: 0.25rem;
+  font-size: 0.7rem;
+  color: var(--accent);
+}
+
+/* ---- Reader (§7.2) ---- */
+.reader--light {
+  background: #f4efe2;
+  color: #1c1812;
+}
+
+.reader--dark {
+  background: #0e0d0b;
+  color: #e8e2d4;
+}
+
+.reader__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 1.2rem;
+  border-bottom: 1px solid rgba(150, 140, 120, 0.25);
+  font-size: 0.85rem;
+}
+
+.reader__crumb {
+  opacity: 0.8;
+}
+
+.reader__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.reader__actions a {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.82rem;
+}
+
+.reader__actions button {
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  border: 1px solid rgba(150, 140, 120, 0.4);
+  border-radius: 0.3rem;
+  padding: 0.3rem 0.6rem;
+}
+
+.reader__scroll {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.reader__page {
+  max-width: 38rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 6rem;
+  font-size: 1.05rem;
+  line-height: 1.75;
+}
+
+.reader__page h1 {
+  font-size: 1.8rem;
+  margin: 0 0 0.2rem;
+}
+
+.reader__author {
+  margin: 0 0 1.5rem;
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.reader__note {
+  margin: 0 0 2rem;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.8rem;
+  border-left: 3px solid var(--accent);
+  opacity: 0.75;
+  background: rgba(194, 162, 90, 0.08);
+}
+
+.reader__page p {
+  margin: 0 0 1.1rem;
+}
+
+.reader__page .attribution {
+  margin-top: 2.5rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid rgba(150, 140, 120, 0.25);
+}
+
+/* ---- Credits / Sources (§7.3) ---- */
+.overlay--credits {
+  align-items: center;
+  justify-content: center;
+}
+
+.credits {
+  width: min(46rem, 92vw);
+  max-height: 84vh;
+  display: flex;
+  flex-direction: column;
+  background: rgba(12, 11, 15, 0.96);
+  border: 1px solid rgba(194, 162, 90, 0.25);
+  border-radius: 0.6rem;
+  padding: 1.5rem;
+}
+
+.credits__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.credits__head h2 {
+  margin: 0;
+  color: var(--accent);
+  font-size: 1.3rem;
+}
+
+.credits__intro {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0.3rem 0 1rem;
+}
+
+.credits__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+}
+
+.credits__item {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr auto auto;
+  gap: 0.8rem;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.85rem;
+}
+
+.credits__kind {
+  text-transform: uppercase;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.25rem;
+  padding: 0.1rem 0.3rem;
+  text-align: center;
+}
+
+.credits__title {
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.credits__provider {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.8rem;
+}
+
+.credits__provider:hover {
+  text-decoration: underline;
+}
+
+.credits__license {
+  font-size: 0.7rem;
+  color: var(--accent);
+  border: 1px solid rgba(194, 162, 90, 0.4);
+  border-radius: 0.25rem;
+  padding: 0.05rem 0.4rem;
+}

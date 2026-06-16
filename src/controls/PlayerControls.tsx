@@ -4,6 +4,7 @@ import { PointerLockControls } from "@react-three/drei";
 import { Vector3 } from "three";
 import { EYE_HEIGHT, MAX_WALK_RADIUS } from "../geometry/hexagon";
 import { useKeyboard } from "./useKeyboard";
+import { useMuseumStore } from "../state/store";
 
 const SPEED = 3.2; // m/s
 
@@ -17,6 +18,8 @@ export function PlayerControls() {
   );
 
   useFrame((_, delta) => {
+    // Movement is locked while a 2D overlay is open (§6.5).
+    if (useMuseumStore.getState().overlay !== "none") return;
     const { forward, back, left, right } = keys.current;
 
     camera.getWorldDirection(tmp.forward);

@@ -1,7 +1,7 @@
 # The Library of Babel — Virtual Museum
 ### Design Document (living — update as decisions are made)
 
-**Status:** Draft v0.6
+**Status:** Draft v0.7
 **Last updated:** 2026-06-16
 **Owner:** (you)
 **Build agent:** Claude Code
@@ -391,6 +391,7 @@ Each phase should end with the doc updated and a note in §13.
 ---
 
 ## 13. Changelog
+- **v0.7 (2026-06-16):** **Phase 2 (Overlays) complete** (§7, §10): the click interaction now opens real 2D overlays that read from the data model — an **art viewer** (full-bleed image, zoom/pan, title/creator/date, persistent attribution line; §7.1); an in-museum **reader** (serif, comfortable measure, light/dark toggle, scroll position kept in session state, "read at source" link; §7.2 — placeholder text until the Phase 4 fetch/sanitize pipeline); and a global **Sources & Licenses** panel listing every loaded asset with provider + license (§7.3 / §8.4; opened via the Sources button or the "C" key). Movement and raycast pause while an overlay is open; Esc or × closes it. Added `model/assets.ts` (`collectRoomAssets`, de-duped by kind+id) with tests (13 total). Verified: lint clean, type-checked build, and all three overlays render (screenshotted).
 - **v0.6 (2026-06-16):** **Phase 1 (One walkable room) complete** (§10): a reusable hexagon shell (floor/ceiling/6 walls, parameterized by `RoomTheme`) with art on walls {0,2,4} and doorway frames on {1,3,5}; art walls carry a bookshelf of clickable spines, a billboarded artifact, and a framed painting (§3.1); a billboarded center sculpture on a plinth with three benches; **first-person pointer-lock + WASD** behind a swappable controller seam (`controls/`, ready for WebXR per Q7); **center-screen raycast** hover-highlight + DOM label + click (`interaction/`, §6.5); short dark hallway stubs at exits; per-culture lighting + fog. Verified: lint clean, 10/10 tests (added hexagon-geometry invariants), type-checked build, and the room renders + interacts. Q13/Q14 (staircase fidelity, floor identity) stay open, due at Phase 3.
 - **v0.5 (2026-06-16):** **Stack locked** — react-three-fiber + drei (Vite + React 19 + TS + Zustand; ESLint/Prettier/Vitest), recorded in §5. **Phase 0 (Scaffold) complete** (§10): project structure, the §4 data model (`model/types.ts`), `config/layout.ts`, the graph-derivation engine (`model/deriveMuseum.ts`) that builds the §2.2 wheel + §2.6 finite-tower from `FLOORS`, unit tests for the graph invariants, placeholder content behind a pluggable `ContentProvider` seam (swapped for the §8 sourcing layer in Phase 4), a minimal r3f scene, lint, and CI. Verified: lint clean, 7/7 tests, type-checked production build, and the scene renders (HUD reads the derived model). Also fixed §6 subsection ordering (6.5 before 6.6).
 - **v0.4 (2026-06-16):** Q15 resolved — **tower is finite** (ground + N fully authored floors; staircase terminates top and bottom; no procedural floors for v1). Updated §2.6 and §11. Q13 (staircase fidelity) and Q14 (floor identity) remain open and non-blocking.

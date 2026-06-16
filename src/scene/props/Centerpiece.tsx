@@ -17,7 +17,14 @@ export function Centerpiece({ artwork }: { artwork: Artwork }) {
         <meshStandardMaterial color="#1d1a16" roughness={0.8} />
       </mesh>
       <Billboard position={[0, 1.7, 0]}>
-        <mesh userData={interactable({ kind: "centerpiece", id: artwork.id, label: artwork.title })}>
+        <mesh
+          userData={interactable({
+            kind: "centerpiece",
+            id: artwork.id,
+            label: artwork.title,
+            artwork,
+          })}
+        >
           <planeGeometry args={[1.5, 2.1]} />
           <meshBasicMaterial color="#d8c79a" toneMapped={false} />
         </mesh>

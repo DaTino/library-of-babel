@@ -4,6 +4,7 @@ import { ActiveControls } from "./controls";
 import { Room } from "./scene/Room";
 import { Interaction } from "./scene/Interaction";
 import { Hud } from "./ui/Hud";
+import { Overlays } from "./ui/Overlays";
 import { museum } from "./data/placeholder";
 import { roomsById } from "./model/deriveMuseum";
 import { EYE_HEIGHT } from "./geometry/hexagon";
@@ -32,6 +33,7 @@ export default function App() {
         <Interaction />
       </Canvas>
       <Hud room={room} />
+      <Overlays room={room} />
     </div>
   );
 }

@@ -40,6 +40,7 @@ src/
 
 ## Status
 
-**Phase 1 — One walkable room ✅** (see §10). A single themed hexagonal room you explore
-in first-person (pointer-lock + WASD) with center-screen raycast hover/click. Next:
-**Phase 2** — art viewer, reader, and attribution overlays (§7).
+**Phase 2 — Overlays ✅** (see §10). Click an item to open the art viewer (zoom/pan),
+the in-museum reader, or the global Sources/attribution panel — all reading from the data
+model. Next: **Phase 3** — the atrium, the 6-room wheel graph, hallways, and the
+spiral-staircase tower.

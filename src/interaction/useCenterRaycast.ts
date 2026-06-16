@@ -20,20 +20,38 @@ function findInteractable(obj: Object3D | null): Hit | null {
 
 /**
  * Under pointer lock the cursor is centered, so we raycast from screen-center
- * each frame (§6.5): hover → highlight + label (DOM), click → interact.
+ * each frame (§6.5): hover → highlight + label, click → open the overlay (§7).
+ * Paused while unlocked or while an overlay is open.
  */
 export function useCenterRaycast() {
   const scene = useThree((s) => s.scene);
   const camera = useThree((s) => s.camera);
   const setHovered = useMuseumStore((s) => s.setHovered);
-  const interact = useMuseumStore((s) => s.interact);
+  const openArt = useMuseumStore((s) => s.openArt);
+  const openReader = useMuseumStore((s) => s.openReader);
+  const noteExit = useMuseumStore((s) => s.noteExit);
 
   const ray = useMemo(() => new Raycaster(), []);
   const center = useMemo(() => new Vector2(0, 0), []);
   const hoveredRef = useRef<Hit | null>(null);
   const highlightedRef = useRef<Object3D | null>(null);
 
+  const clearHover = () => {
+    if (highlightedRef.current) highlightedRef.current.scale.setScalar(1);
+    highlightedRef.current = null;
+    if (hoveredRef.current) {
+      hoveredRef.current = null;
+      setHovered(null);
+    }
+  };
+
   useFrame(() => {
+    const { isLocked, overlay } = useMuseumStore.getState();
+    if (!isLocked || overlay !== "none") {
+      clearHover();
+      return;
+    }
+
     ray.setFromCamera(center, camera);
     const hits = ray.intersectObjects(scene.children, true);
 
@@ -63,9 +81,18 @@ export function useCenterRaycast() {
     const onPointerDown = () => {
       if (!document.pointerLockElement) return;
       const h = hoveredRef.current;
-      if (h) interact({ id: h.id, label: h.label, kind: h.kind, targetRoomId: h.targetRoomId });
+      if (!h) return;
+      if (h.kind === "book" && h.book) {
+        openReader(h.book);
+        document.exitPointerLock();
+      } else if (h.artwork) {
+        openArt(h.artwork);
+        document.exitPointerLock();
+      } else if (h.kind === "exit") {
+        noteExit(h.label);
+      }
     };
     window.addEventListener("pointerdown", onPointerDown);
     return () => window.removeEventListener("pointerdown", onPointerDown);
-  }, [interact]);
+  }, [openArt, openReader, noteExit]);
 }

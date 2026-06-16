@@ -28,6 +28,7 @@ export function ArtWall({ wall, theme }: { wall: ArtWallModel; theme: RoomTheme 
             kind: "painting",
             id: wall.painting.id,
             label: wall.painting.title,
+            artwork: wall.painting,
           })}
         >
           <planeGeometry args={[1.9, 1.2]} />
@@ -55,6 +56,7 @@ export function ArtWall({ wall, theme }: { wall: ArtWallModel; theme: RoomTheme 
               kind: "artifact",
               id: wall.shelfItem.id,
               label: wall.shelfItem.title,
+              artwork: wall.shelfItem,
             })}
           >
             <planeGeometry args={[0.72, 0.92]} />
@@ -83,7 +85,7 @@ function Books({ books, y, z }: { books: BookRef[]; y: number; z: number }) {
           <mesh
             key={b.id}
             position={[x, 0, 0]}
-            userData={interactable({ kind: "book", id: b.id, label: b.title })}
+            userData={interactable({ kind: "book", id: b.id, label: b.title, book: b })}
           >
             <boxGeometry args={[spineW, h, 0.22]} />
             <meshStandardMaterial color={SPINE_COLORS[i % SPINE_COLORS.length]} roughness={0.7} />
