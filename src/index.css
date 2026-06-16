@@ -1,0 +1,178 @@
+:root {
+  color-scheme: dark;
+  --bg: #07070a;
+  --fg: #e8e4d8;
+  --muted: #9a948a;
+  --accent: #c2a25a;
+  font-family: ui-serif, Georgia, "Times New Roman", serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  overflow: hidden;
+}
+
+.app {
+  position: relative;
+  height: 100vh;
+  width: 100vw;
+  cursor: crosshair;
+}
+
+.app canvas {
+  display: block;
+}
+
+/* ---- Top-left info panel ---- */
+.hud {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  max-width: 22rem;
+  padding: 1rem 1.25rem;
+  background: rgba(7, 7, 10, 0.5);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(194, 162, 90, 0.25);
+  border-radius: 0.5rem;
+  pointer-events: none;
+}
+
+.hud h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+}
+
+.hud__sub {
+  margin: 0.15rem 0 0.85rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.hud__hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.hud__hint b {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+/* ---- Center reticle + hover label ---- */
+.reticle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.reticle__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(232, 228, 216, 0.5);
+  outline: 1px solid rgba(7, 7, 10, 0.6);
+  transition:
+    background 0.12s ease,
+    transform 0.12s ease;
+}
+
+.reticle__dot--active {
+  background: var(--accent);
+  transform: scale(1.5);
+}
+
+.reticle__label {
+  margin-top: 1.1rem;
+  padding: 0.25rem 0.6rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  color: var(--fg);
+  background: rgba(7, 7, 10, 0.78);
+  border: 1px solid rgba(194, 162, 90, 0.3);
+  border-radius: 0.3rem;
+  white-space: nowrap;
+}
+
+/* ---- "Click to enter" prompt ---- */
+.prompt {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: radial-gradient(circle at center, rgba(7, 7, 10, 0.35), rgba(7, 7, 10, 0.75));
+  pointer-events: none;
+  text-align: center;
+}
+
+.prompt__title {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+
+.prompt__body {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--fg);
+}
+
+.prompt__body b {
+  color: var(--accent);
+}
+
+/* ---- Click toast ---- */
+.toast {
+  position: absolute;
+  bottom: 2.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.6rem 1.1rem;
+  background: rgba(7, 7, 10, 0.82);
+  border: 1px solid rgba(194, 162, 90, 0.35);
+  border-radius: 0.4rem;
+  pointer-events: none;
+}
+
+.toast b {
+  color: var(--accent);
+  font-size: 0.95rem;
+}
+
+.toast__note {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
