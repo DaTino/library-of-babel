@@ -54,6 +54,7 @@ This caches images + text under `public/content/` (git-ignored); reload the page
 - Put the center reticle on an item (painting, book, artifact, or a doorway) — it
   highlights and shows a label. **Click** to open the art viewer or reader.
 - **Esc** releases the mouse.
+- Ambient audio fades in when you enter; toggle it with the **🔊** button or **M**.
 
 ## All commands
 

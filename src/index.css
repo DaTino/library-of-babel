@@ -199,6 +199,27 @@ body {
   color: var(--accent);
 }
 
+/* ---- Mute / audio toggle (§6.6) ---- */
+.sound-btn {
+  position: absolute;
+  top: 1.5rem;
+  right: 7.5rem;
+  z-index: 20;
+  width: 2.6rem;
+  height: 2.35rem;
+  font-size: 1rem;
+  color: var(--fg);
+  background: rgba(7, 7, 10, 0.55);
+  border: 1px solid rgba(194, 162, 90, 0.35);
+  border-radius: 0.4rem;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+
+.sound-btn:hover {
+  border-color: var(--accent);
+}
+
 /* ---- Overlay shell ---- */
 .overlay-root {
   position: fixed;
@@ -417,6 +438,7 @@ body {
 
 .reader__page p {
   margin: 0 0 1.1rem;
+  hyphens: auto;
 }
 
 .reader__page .attribution {
@@ -528,6 +550,14 @@ body {
   border: 1px solid rgba(194, 162, 90, 0.4);
   border-radius: 0.25rem;
   padding: 0.05rem 0.4rem;
+}
+
+.credits__audio {
+  margin: 1rem 0 0;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.78rem;
+  color: var(--muted);
 }
 
 /* ---- Transition fade (§2.4) ---- */

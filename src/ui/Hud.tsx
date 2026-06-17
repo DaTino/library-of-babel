@@ -11,9 +11,16 @@ export function Hud({ room, floorTitle }: { room: Room; floorTitle: string }) {
   const hovered = useMuseumStore((s) => s.hovered);
   const openCredits = useMuseumStore((s) => s.openCredits);
   const requestTravel = useMuseumStore((s) => s.requestTravel);
+  const toggleMute = useMuseumStore((s) => s.toggleMute);
+  const muted = useMuseumStore((s) => s.muted);
+  const audioEnabled = useMuseumStore((s) => s.audioEnabled);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.code === "KeyM") {
+        useMuseumStore.getState().toggleMute();
+        return;
+      }
       const st = useMuseumStore.getState();
       if (st.overlay !== "none" || st.isTraveling) return;
       if (e.code === "KeyR") requestTravel(`${room.id.split(":")[0]}:atrium`);
@@ -35,10 +42,17 @@ export function Hud({ room, floorTitle }: { room: Room; floorTitle: string }) {
         <p className="hud__sub">Library of Babel · {floorTitle}</p>
         <p className="hud__hint">
           <b>WASD</b> move · <b>mouse</b> look · <b>click</b> items · <b>R</b> atrium · <b>C</b>{" "}
-          sources · <b>Esc</b> back
+          sources · <b>M</b> mute · <b>Esc</b> back
         </p>
       </div>
 
+      <button
+        className="sound-btn"
+        onClick={toggleMute}
+        aria-label={muted ? "Unmute ambient audio" : "Mute ambient audio"}
+      >
+        {audioEnabled && muted ? "🔇" : "🔊"}
+      </button>
       <button className="sources-btn" onClick={openCredits}>
         Sources
       </button>

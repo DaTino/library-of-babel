@@ -5,6 +5,7 @@ import { Scene } from "./scene/Scene";
 import { Hud } from "./ui/Hud";
 import { Overlays } from "./ui/Overlays";
 import { Transition } from "./ui/Transition";
+import { useAudio } from "./audio/useAudio";
 import { placeholderContent } from "./data/placeholder";
 import { deriveMuseum, roomsById } from "./model/deriveMuseum";
 import { FLOORS } from "./config/layout";
@@ -24,6 +25,8 @@ export default function App() {
   const floorTitle =
     museum.floors.find((f) => f.level === room.floorLevel)?.title ?? `Floor ${room.floorLevel}`;
 
+  useAudio(room);
+
   useEffect(() => {
     let cancelled = false;
     loadCachedContent().then((provider) => {
@@ -42,7 +45,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <Canvas camera={{ position: [0, EYE_HEIGHT, 2.2], fov: 70, near: 0.1, far: 100 }}>
+      <Canvas dpr={[1, 2]} camera={{ position: [0, EYE_HEIGHT, 2.2], fov: 70, near: 0.1, far: 100 }}>
         <color attach="background" args={["#07070a"]} />
         <fog attach="fog" args={["#07070a", 10, 30]} />
         {/* Keyed by room id so each scene fully mounts/disposes on travel (§2.4). */}

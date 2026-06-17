@@ -31,7 +31,8 @@ the source of truth and is updated in place as decisions are made.
 - Walk toward a **doorway** (while facing it) or **click** it to travel between rooms; walk
   onto the central **staircase** in an atrium to change floors
 - Put the reticle on a **painting / artifact / book** and click to open the viewer or reader
-- **R** return to the floor's atrium · **C** Sources & licenses · **Esc** release / close
+- **R** return to the floor's atrium · **C** Sources & licenses · **M** mute · **Esc** release / close
+- Ambient audio fades in when you enter and crossfades as you move between rooms
 
 > **Real content:** run `npm run fetch:content` once to load actual Met art + Gutenberg
 > texts (otherwise you'll see styled placeholders).
@@ -50,16 +51,17 @@ src/
   navigation/entry.ts   # where the camera lands when arriving in a room
   controls/             # first-person pointer-lock + WASD (swappable seam for WebXR)
   interaction/          # center-screen raycast (hover / click → overlay or travel)
+  audio/                # procedural ambient soundscapes (Web Audio, crossfade, mute, §6.6)
   scene/                # Scene switch, Room, Atrium, HexShell, walls/, props/, CameraRig, NavTriggers, ArtImage
   ui/                   # Hud, Overlays, Transition, overlays/ (art viewer, reader, sources)
-  state/store.ts        # Zustand store (navigation + overlays)
+  state/store.ts        # Zustand store (navigation, overlays, audio)
   App.tsx / main.tsx
 scripts/fetch-content.ts  # build-time fetcher: Met art + Gutenberg texts → public/content/ (§8)
 ```
 
 ## Status
 
-**Phase 4 — Sourcing layer ✅** (see §10). Run `npm run fetch:content` to cache real
-open-licensed art (The Met) and full texts (Project Gutenberg) under `public/content/`; the
-app serves them same-origin and falls back to placeholders offline. Next: **Phase 5** —
-per-room theming, ambient audio, and a performance/texture pass.
+**Phase 5 — Theming, audio & polish ✅** (see §10). Per-culture ambient soundscapes
+(procedural Web Audio, crossfaded on travel, autoplay-gated, mutable via the 🔊 button or
+**M**), on top of the per-room theming and a perf/typography pass. Next: **Phase 6** —
+content curation & QA (fill thin spots, vet every attribution).

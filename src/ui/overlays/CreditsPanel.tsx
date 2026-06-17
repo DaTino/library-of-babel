@@ -37,6 +37,7 @@ export function CreditsPanel({ room, onClose }: { room: Room; onClose: () => voi
             </li>
           ))}
         </ul>
+        <p className="credits__audio">Ambient audio — procedurally generated · CC0 (own work)</p>
       </div>
     </div>
   );

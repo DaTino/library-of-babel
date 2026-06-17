@@ -27,6 +27,8 @@ interface MuseumState {
   activeBook: BookRef | null;
 
   audioEnabled: boolean;
+  /** Ambient audio mute toggle (§6.6). */
+  muted: boolean;
   isLocked: boolean;
   hovered: Hovered | null;
   readingPositions: Record<string, number>;
@@ -43,6 +45,7 @@ interface MuseumState {
   openCredits: () => void;
   closeOverlay: () => void;
   enableAudio: () => void;
+  toggleMute: () => void;
   setLocked: (v: boolean) => void;
   setHovered: (h: Hovered | null) => void;
   setReadingPosition: (bookId: string, scrollTop: number) => void;
@@ -59,6 +62,7 @@ export const useMuseumStore = create<MuseumState>((set) => ({
   activeArtwork: null,
   activeBook: null,
   audioEnabled: false,
+  muted: false,
   isLocked: false,
   hovered: null,
   readingPositions: {},
@@ -81,6 +85,7 @@ export const useMuseumStore = create<MuseumState>((set) => ({
   openCredits: () => set({ overlay: "credits" }),
   closeOverlay: () => set({ overlay: "none" }),
   enableAudio: () => set({ audioEnabled: true }),
+  toggleMute: () => set((s) => ({ muted: !s.muted })),
   setLocked: (v) => set({ isLocked: v }),
   setHovered: (h) => set({ hovered: h }),
   setReadingPosition: (bookId, scrollTop) =>
