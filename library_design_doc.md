@@ -1,7 +1,7 @@
 # The Library of Babel — Virtual Museum
 ### Design Document (living — update as decisions are made)
 
-**Status:** Draft v0.11
+**Status:** Draft v0.12
 **Last updated:** 2026-06-16
 **Owner:** (you)
 **Build agent:** Claude Code
@@ -368,6 +368,25 @@ Implementation notes:
 
 Each phase should end with the doc updated and a note in §13.
 
+### Beyond v1 — optional follow-ups (backlog)
+Phases 0–6 are complete (v1 is feature- and content-complete). Nothing below is required; these are the natural next steps if the project continues.
+
+- **Deploy.** The app is a static site (§5): `npm run build` → `dist/`. A deploy/CI pipeline should run `npm run fetch:content` **before** `build` so the cached art + texts (§8) ship with it. Caveats: the current `origin` is a personal GitHub that the corporate security tooling flags as non-allowed — resolve the remote (or pick an approved host: Vercel / Netlify / GitHub Pages) before pushing/deploying, and set Vite `base` for a subpath host (see the `vite.config.ts` note).
+- **Content & sourcing.**
+  - Weight a **"featured/legible" subset** higher in the global pool (§8.5) — e.g. Standard Ebooks or canonical classics — so shelves aren't all obscure.
+  - Add **art sources for the thinner cultures** (Pacific Northwest, Mali/Songhai) beyond the Met — Smithsonian Open Access, Wikimedia Commons (§8.2) — to retire their placeholder fallbacks.
+  - Reader **citations / richer metadata** (genre, subjects) surfaced in the reader and Sources panel.
+- **Rendering & performance.**
+  - A real **texture-budget pass**: dispose cached painting textures on floor exit and/or add LOD, beyond today's dpr cap + active-room-only render (§6, §12).
+  - **Texture the shelf-artifact and centerpiece billboards** with their cached images (currently solid-colored), and/or upgrade centerpieces to low-poly 3D (§6.3).
+  - **Code-split** the Three.js bundle (the >500 kB build warning).
+- **Interaction & platform.**
+  - **WebXR** — add a controller behind the existing swappable seam (`controls/`, §5 / Q7) for headset exploration.
+  - **Walkable spiral staircase** instead of the stylized transition (Q13) — watch camera collision + motion comfort (§12).
+  - **Positional audio** — a fountain in the atrium, murmurs near shelves (§6.6, "optional later").
+  - Optional **bookmarks/favorites** if visitors want persistence (revisit Q8 — currently stateless).
+- **More floors / themed sets.** The tower is finite and fully authored (§2.6); appending a floor to `FLOORS` with its own cultures + art is cheap (e.g. a floor of modern movements, or of mythologies).
+
 ---
 
 ## 11. Open design decisions
@@ -395,6 +414,7 @@ Each phase should end with the doc updated and a note in §13.
 ---
 
 ## 13. Changelog
+- **v0.12 (2026-06-16):** Added a **post-v1 backlog** to §10 (optional follow-ups: deploy/CI, a featured-book weighting + more art sources for thin cultures, a texture-budget/3D/code-split perf pass, WebXR + a walkable staircase + positional audio, and further authored floors). Docs only — Phases 0–6 remain complete.
 - **v0.11 (2026-06-16):** **Phase 6 (Content curation) — corpus expansion.** **10 texts per shelf** (was 4), each placed **exactly once** across the whole museum (no repeats within or across rooms — 36 shelves × 10 = **360 unique texts**), with **genre variety** (fiction, non-fiction, poetry, drama, essays) via Gutendex `topic` buckets and a runtime unique book-dealer (`content/provider.ts`). The **Upper Gallery (floor 2)** now holds six distinct cultures instead of repeats — **Mesopotamia, Pacific Northwest Coast, Rome, Mali & Songhai, Napoleonic France, Edo Japan** (12 cultures total), each with its own theme, audio bed, label, and Met sourcing (§9). The fetcher gained **retry-with-backoff** and an **`ART_ONLY` merge mode** (the Met throttles on long runs; this re-fetches a culture's art without re-downloading texts). Verified live: **95 artworks across all 12 cultures + 360 texts** cached; lint, 27/27 tests (incl. a global no-repeats assertion), build, and the upper-floor rooms render with real art + 10-book shelves + real texts (screenshotted).
 - **v0.10 (2026-06-16):** **Phase 5 (Theming, audio & polish) complete** (§6.6, §10). Per-room `RoomTheme` already drove light/color/material (Phases 1/3); this phase adds **per-culture ambient soundscapes** via a small procedural Web Audio engine (`src/audio/`): a drone-chord + slow filter LFO + airy noise per culture (+ a neutral atrium bed), **crossfaded on travel** (tied to the §2.4 fade), **autoplay-gated** on the enter gesture, with a **mute** control (🔊 button / **M** key). Beds are generated/owned (CC0) — no files to source; `RoomTheme.ambientAudioUrl` remains the seam for sourced recordings later, and a credit shows in the Sources panel. Polish: device-pixel-ratio cap (`dpr={[1,2]}`) + r3f's unmount disposal for the perf pass (only the active room renders; textures bounded to the cached set), and reader hyphenation. Verified: lint, 27/27 tests (audio profiles), build, mute control renders, audio engine inits clean. Deeper texture-budget work can follow if profiling warrants.
 - **v0.9 (2026-06-16):** **Phase 4 (Sourcing layer) complete** (§8/§9, §10): a **build-time fetch-and-cache** pipeline (`scripts/fetch-content.ts`, `npm run fetch:content`) pulls open-licensed **art from The Met** (per-culture, CC0, gated on `isPublicDomain` + a usable image, with a manual-override blocklist §9) and **full texts from Project Gutenberg via Gutendex** (the global pool §8.5), normalizes them to the §4 schema, and caches images + text under `public/content/` (git-ignored, served same-origin → no CORS). At runtime the app loads the manifest and swaps in a **cached `ContentProvider`** (`src/content/`) with a seeded per-room art picker (§9) and a global per-shelf book sampler (§8.5), falling back to placeholder content when the cache is absent (offline/dev). Paintings are textured with the cached image; the reader streams the real full text (lazy by chunk); viewer + credits show real Met/Gutenberg attribution. **CORS risk resolved** (§12). Verified live: 48 artworks + 24 texts cached; lint, 25/25 tests, build, and real content across room/viewer/reader/credits (screenshotted). Future refinements: weight a "featured/legible" subset higher (§8.5), more feeds (ctext/Perseus/Standard Ebooks), and a 3D texture-budget pass for walls/centerpieces (Phase 5).
