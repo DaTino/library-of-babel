@@ -29,6 +29,12 @@ const LOREM_TITLES = [
   "The Cartography of Lost Rooms",
   "Field Notes from the Atrium",
   "Concerning Stairs that Climb Forever",
+  "The Garden of Annotations",
+  "An Anatomy of Mirrors",
+  "Notes Toward a Total Library",
+  "The Grammar of Labyrinths",
+  "Of Tigers and Theologians",
+  "A Brief History of the Infinite",
 ];
 
 /** Tiny lorem pool standing in for the global corpus (§8.3 / §8.5). */
@@ -67,7 +73,7 @@ export const placeholderContent: ContentProvider = {
           `Artifact ${k + 1} — ${label}`,
           culture,
         ),
-        shelf: sample(LOREM_BOOKS, `${floor.id}:${culture}:${k}`, 4),
+        shelf: sample(LOREM_BOOKS, `${floor.id}:${culture}:${k}`, 10),
       })),
       centerpiece: placeholderArtwork(
         `${floor.id}:${culture}:centerpiece`,

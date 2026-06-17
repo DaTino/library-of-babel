@@ -39,6 +39,44 @@ export const CULTURE_THEMES: Record<CultureId, RoomTheme> = {
     ambientLight: { color: "#6e5240", intensity: 0.45 },
     materials: { floor: "#5a3a2a", wall: "#d9c7a3" },
   },
+
+  // --- Upper gallery ---
+  mesopotamia: {
+    palette: ["#c08a4a", "#6b4a2a", "#3a5a8a"],
+    keyLight: { color: "#ffe0a8", intensity: 1.1 },
+    ambientLight: { color: "#b08850", intensity: 0.5 },
+    materials: { floor: "#6b4a2a", wall: "#cbb083" },
+  },
+  pacific_northwest: {
+    palette: ["#7a2e22", "#1c1c1c", "#3a5f4a"],
+    keyLight: { color: "#f0ead8", intensity: 1.0 },
+    ambientLight: { color: "#5a6b5a", intensity: 0.5 },
+    materials: { floor: "#3a2a22", wall: "#6e5a44" },
+  },
+  rome: {
+    palette: ["#e8e2d2", "#8a2230", "#b8a14a"],
+    keyLight: { color: "#fff4e0", intensity: 1.3 },
+    ambientLight: { color: "#cdbfa0", intensity: 0.55 },
+    materials: { floor: "#b8a98c", wall: "#efe9da" },
+  },
+  mali_songhai: {
+    palette: ["#caa23a", "#7a4a22", "#9a5a2a"],
+    keyLight: { color: "#ffe6b0", intensity: 1.1 },
+    ambientLight: { color: "#b08040", intensity: 0.5 },
+    materials: { floor: "#6e4a2a", wall: "#c9a877" },
+  },
+  napoleonic_france: {
+    palette: ["#1f3a6e", "#caa23a", "#7a1f2a"],
+    keyLight: { color: "#fff0d0", intensity: 1.15 },
+    ambientLight: { color: "#6a7a9a", intensity: 0.5 },
+    materials: { floor: "#2a2a3a", wall: "#cdb78a" },
+  },
+  edo_japan: {
+    palette: ["#2a3a5a", "#1a1a1a", "#d8cdb0"],
+    keyLight: { color: "#f4f0e0", intensity: 1.1 },
+    ambientLight: { color: "#7a8aa0", intensity: 0.5 },
+    materials: { floor: "#3a342b", wall: "#d8cdb0" },
+  },
 };
 
 /** Neutral, legible atrium bed (§3.2) — the wayfinding anchor. */

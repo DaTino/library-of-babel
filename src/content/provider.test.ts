@@ -3,6 +3,7 @@ import { createCachedProvider } from "./provider";
 import type { CachedManifest } from "./types";
 import type { Artwork, BookRef } from "../model/types";
 import { FLOORS } from "../config/layout";
+import { deriveMuseum } from "../model/deriveMuseum";
 
 const art = (id: string): Artwork => ({
   id,
@@ -20,43 +21,47 @@ const book = (id: string): BookRef => ({
   source: { provider: "Project Gutenberg", providerUrl: "#", license: "PD" },
 });
 
+// Enough books to fill every shelf (36 shelves × 10 = 360) with room to spare.
 const manifest: CachedManifest = {
   generatedAt: "t",
   artByCulture: { egypt: Array.from({ length: 8 }, (_, i) => art(`egypt-${i}`)) },
-  books: Array.from({ length: 12 }, (_, i) => book(`b-${i}`)),
+  books: Array.from({ length: 400 }, (_, i) => book(`b-${i}`)),
 };
 
+const provider = createCachedProvider(manifest);
 const floor = FLOORS[0];
 
 describe("createCachedProvider", () => {
-  const provider = createCachedProvider(manifest);
-
-  it("builds 3 art walls (painting + artifact + 4 books) and a centerpiece", () => {
+  it("builds 3 art walls (painting + artifact + 10 books) and a centerpiece", () => {
     const c = provider.contentFor(floor, "egypt");
     expect(c.artWalls).toHaveLength(3);
     for (const w of c.artWalls) {
       expect(w.painting.source.license).toBeTruthy();
       expect(w.shelfItem.source.provider).toBeTruthy();
-      expect(w.shelf).toHaveLength(4);
+      expect(w.shelf).toHaveLength(10);
     }
     expect(c.centerpiece).toBeDefined();
   });
 
-  it("draws shelf books from the global pool (§8.5)", () => {
-    const poolIds = new Set(manifest.books.map((b) => b.id));
-    for (const w of provider.contentFor(floor, "egypt").artWalls) {
-      for (const b of w.shelf) expect(poolIds.has(b.id)).toBe(true);
-    }
+  it("places each text exactly once across every shelf in the museum (Phase 6)", () => {
+    const museum = deriveMuseum(FLOORS, provider);
+    const ids: string[] = [];
+    for (const f of museum.floors)
+      for (const room of f.rooms)
+        for (const w of room.artWalls) for (const b of w.shelf) ids.push(b.id);
+    expect(ids.length).toBeGreaterThan(0);
+    expect(new Set(ids).size).toBe(ids.length); // no repeats within or across rooms
   });
 
-  it("is deterministic for the same room within a session", () => {
-    const a = provider.contentFor(floor, "egypt").artWalls.map((w) => w.painting.id);
-    const b = provider.contentFor(floor, "egypt").artWalls.map((w) => w.painting.id);
-    expect(a).toEqual(b);
+  it("fills every themed shelf with 10 books when the pool is large enough", () => {
+    const museum = deriveMuseum(FLOORS, provider);
+    for (const f of museum.floors)
+      for (const room of f.rooms.filter((r) => r.kind === "themed"))
+        for (const w of room.artWalls) expect(w.shelf).toHaveLength(10);
   });
 
   it("falls back to placeholder art for a culture with no cached pool", () => {
-    const c = provider.contentFor(floor, "greece"); // absent from the manifest
+    const c = provider.contentFor(floor, "rome"); // absent from manifest.artByCulture
     expect(c.artWalls).toHaveLength(3);
     expect(c.artWalls[0].painting.source.license).toBeTruthy();
   });

@@ -44,7 +44,9 @@ full texts (Project Gutenberg)**:
 npm run fetch:content
 ```
 
-This caches images + text under `public/content/` (git-ignored); reload the page to see them.
+This caches art for 12 cultures + ~360 texts under `public/content/` (git-ignored), so it
+takes a few minutes; reload the page when it finishes. If the Met API throttles one
+culture's art, re-fetch just that culture with `ART_ONLY=rome,edo_japan npm run fetch:content`.
 
 ## 3. Explore the room
 

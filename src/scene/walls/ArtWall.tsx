@@ -78,8 +78,8 @@ export function ArtWall({ wall, theme }: { wall: ArtWallModel; theme: RoomTheme 
 
 function Books({ books, y, z }: { books: BookRef[]; y: number; z: number }) {
   const n = books.length;
-  const spineW = 0.18;
-  const gap = 0.04;
+  const spineW = 0.16;
+  const gap = 0.034;
   const total = n * spineW + (n - 1) * gap;
   let cursor = -total / 2 + spineW / 2;
 

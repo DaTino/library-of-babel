@@ -5,12 +5,20 @@
  */
 
 export type CultureId =
+  // Ground floor
   | "egypt"
   | "mesoamerica"
   | "greece"
   | "china"
   | "renaissance_italy"
-  | "tudor_england";
+  | "tudor_england"
+  // Upper gallery
+  | "mesopotamia"
+  | "pacific_northwest"
+  | "rome"
+  | "mali_songhai"
+  | "napoleonic_france"
+  | "edo_japan";
 
 export type License = "CC0" | "PD" | "CC-BY" | "CC-BY-SA" | "other";
 

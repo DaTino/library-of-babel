@@ -34,8 +34,8 @@ the source of truth and is updated in place as decisions are made.
 - **R** return to the floor's atrium · **C** Sources & licenses · **M** mute · **Esc** release / close
 - Ambient audio fades in when you enter and crossfades as you move between rooms
 
-> **Real content:** run `npm run fetch:content` once to load actual Met art + Gutenberg
-> texts (otherwise you'll see styled placeholders).
+> **Real content:** run `npm run fetch:content` once to cache real Met art (12 cultures) +
+> ~360 Gutenberg texts — it takes a few minutes (otherwise you'll see styled placeholders).
 
 See [`startup.md`](./startup.md) for full setup and prerequisites.
 
@@ -61,7 +61,7 @@ scripts/fetch-content.ts  # build-time fetcher: Met art + Gutenberg texts → pu
 
 ## Status
 
-**Phase 5 — Theming, audio & polish ✅** (see §10). Per-culture ambient soundscapes
-(procedural Web Audio, crossfaded on travel, autoplay-gated, mutable via the 🔊 button or
-**M**), on top of the per-room theming and a perf/typography pass. Next: **Phase 6** —
-content curation & QA (fill thin spots, vet every attribution).
+**Phase 6 — Content curation ✅** (see §10). Two floors, **12 cultures**, real Met art per
+room, and **360 unique texts** (10 per shelf, no repeats anywhere) spanning fiction,
+non-fiction, poetry, plays, and essays. Run `npm run fetch:content` to populate. **All
+build-plan phases (0–6) are complete.**

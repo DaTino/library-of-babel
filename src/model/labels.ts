@@ -7,6 +7,12 @@ const TITLES: Record<CultureId, string> = {
   china: "Pre-Yuan China",
   renaissance_italy: "Renaissance Italy",
   tudor_england: "Elizabethan / Tudor England",
+  mesopotamia: "Ancient Mesopotamia",
+  pacific_northwest: "Pacific Northwest Coast",
+  rome: "Ancient Rome",
+  mali_songhai: "Mali & Songhai",
+  napoleonic_france: "Napoleonic France",
+  edo_japan: "Edo Japan",
 };
 
 export function cultureTitle(culture: CultureId): string {
