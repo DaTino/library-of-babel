@@ -33,6 +33,19 @@ export const FLOORS: FloorConfig[] = [
       "edo_japan",
     ],
   },
+  {
+    id: "floor-3",
+    level: 2,
+    title: "The Lantern Gallery",
+    ring: [
+      "plains_lakota",
+      "ancient_india",
+      "viking_norse",
+      "islamic_golden_age",
+      "polynesia",
+      "american_19c",
+    ],
+  },
   // To add capacity: append another floor here (its own atrium + 6-room ring).
   // To reorder a floor's ring: reorder its `ring` array.
 ];

@@ -16,6 +16,12 @@ describe("audio profiles", () => {
       "mali_songhai",
       "napoleonic_france",
       "edo_japan",
+      "plains_lakota",
+      "ancient_india",
+      "viking_norse",
+      "islamic_golden_age",
+      "polynesia",
+      "american_19c",
       "atrium",
     ] as const;
     for (const k of keys) expect(AUDIO_PROFILES[k]).toBeDefined();

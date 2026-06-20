@@ -18,7 +18,14 @@ export type CultureId =
   | "rome"
   | "mali_songhai"
   | "napoleonic_france"
-  | "edo_japan";
+  | "edo_japan"
+  // The Lantern Gallery (top floor)
+  | "plains_lakota"
+  | "ancient_india"
+  | "viking_norse"
+  | "islamic_golden_age"
+  | "polynesia"
+  | "american_19c";
 
 export type License = "CC0" | "PD" | "CC-BY" | "CC-BY-SA" | "other";
 
@@ -49,6 +56,7 @@ export interface BookRef {
   language: string;
   readUrl?: string; // direct full-text URL (txt/html/epub)
   externalUrl?: string; // canonical page at source
+  popularity?: number; // source popularity (Gutenberg download count) — weights the "featured/legible" tier (§8.5)
   source: SourceRef;
 }
 

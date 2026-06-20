@@ -13,6 +13,12 @@ const TITLES: Record<CultureId, string> = {
   mali_songhai: "Mali & Songhai",
   napoleonic_france: "Napoleonic France",
   edo_japan: "Edo Japan",
+  plains_lakota: "Plains Nations (Lakota)",
+  ancient_india: "Ancient India (Indus–Maurya)",
+  viking_norse: "Viking Age Scandinavia",
+  islamic_golden_age: "The Islamic Golden Age",
+  polynesia: "Polynesia",
+  american_19c: "19th-Century America",
 };
 
 export function cultureTitle(culture: CultureId): string {

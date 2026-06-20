@@ -10,6 +10,8 @@ import type { CachedManifest } from "./types";
 const SESSION_SALT = Math.random().toString(36).slice(2);
 const ART_PER_ROOM = 7; // 3 paintings + 3 shelf artifacts + 1 centerpiece
 const BOOKS_PER_SHELF = 10;
+const FEATURED_FRACTION = 0.3; // top 30% by download count = the "legible/canonical" tier (§8.5)
+const FEATURED_PER_SHELF = 3; // give every shelf a few recognizable titles, not all obscure
 
 /**
  * Content provider backed by the Phase 4 cache (§8). Art is picked per room from
@@ -36,23 +38,52 @@ export function createCachedProvider(manifest: CachedManifest): ContentProvider 
   };
 }
 
+/** Every shelf id across the whole tower, in a stable floor→culture→wall order. */
+function orderedShelfIds(): string[] {
+  const ids: string[] = [];
+  for (const floor of [...FLOORS].sort((a, b) => a.level - b.level))
+    for (const culture of floor.ring)
+      for (let k = 0; k < 3; k++) ids.push(`${floor.id}:${culture}:${k}`);
+  return ids;
+}
+
 /**
- * Globally unique book placement (Phase 6): shuffle the pool once, then deal
- * consecutive non-overlapping slices to every shelf in a stable room order, so
- * no text is repeated anywhere. If the pool is short, later shelves get fewer.
+ * Globally unique book placement (Phase 6) with a featured/legible weighting
+ * (§8.5). The pool is split by source popularity (Gutenberg download count) into
+ * a "featured" tier and the long tail; every shelf is then dealt a few featured
+ * titles plus the rest from the tail. Because featured and tail are disjoint and
+ * each book is consumed at most once, no text is ever repeated within or across
+ * rooms — but shelves are no longer all-obscure. Falls back to a plain unique
+ * deal when the cache carries no popularity signal (e.g. a pre-B1 cache).
  */
 function dealShelves(pool: BookRef[]): Map<string, BookRef[]> {
-  const shuffled = sample(pool, `books:${SESSION_SALT}`, pool.length);
+  const shelfIds = orderedShelfIds();
   const map = new Map<string, BookRef[]>();
-  let shelfIndex = 0;
-  for (const floor of [...FLOORS].sort((a, b) => a.level - b.level)) {
-    for (const culture of floor.ring) {
-      for (let k = 0; k < 3; k++) {
-        const start = shelfIndex * BOOKS_PER_SHELF;
-        map.set(`${floor.id}:${culture}:${k}`, shuffled.slice(start, start + BOOKS_PER_SHELF));
-        shelfIndex++;
-      }
-    }
+
+  if (!pool.some((b) => (b.popularity ?? 0) > 0)) {
+    const shuffled = sample(pool, `books:${SESSION_SALT}`, pool.length);
+    shelfIds.forEach((id, i) =>
+      map.set(id, shuffled.slice(i * BOOKS_PER_SHELF, i * BOOKS_PER_SHELF + BOOKS_PER_SHELF)),
+    );
+    return map;
+  }
+
+  const ranked = [...pool].sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0));
+  const cut = Math.round(ranked.length * FEATURED_FRACTION);
+  // Shuffle within each tier so *which* featured/tail books appear varies per
+  // visit, while the tier split (legibility) stays stable.
+  const featured = sample(ranked.slice(0, cut), `featured:${SESSION_SALT}`, cut);
+  const tail = sample(ranked.slice(cut), `tail:${SESSION_SALT}`, ranked.length - cut);
+
+  let fi = 0;
+  let ti = 0;
+  for (const id of shelfIds) {
+    const shelf: BookRef[] = [];
+    while (shelf.length < FEATURED_PER_SHELF && fi < featured.length) shelf.push(featured[fi++]);
+    while (shelf.length < BOOKS_PER_SHELF && ti < tail.length) shelf.push(tail[ti++]);
+    while (shelf.length < BOOKS_PER_SHELF && fi < featured.length) shelf.push(featured[fi++]);
+    // Shuffle within the shelf so featured spines aren't always in the same spot.
+    map.set(id, sample(shelf, `shelf:${id}:${SESSION_SALT}`, shelf.length));
   }
   return map;
 }

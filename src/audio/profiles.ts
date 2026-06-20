@@ -149,6 +149,68 @@ export const AUDIO_PROFILES: Record<CultureId | "atrium", AudioProfile> = {
     gain: 0.42,
     progression: [0, 5, 2, 7],
   },
+
+  // --- The Lantern Gallery (top floor) ---
+  // Big-sky open fifths over a steady drum-like low end.
+  plains_lakota: {
+    root: 98,
+    intervals: [1, 1.5, 2],
+    type: "sine",
+    cutoff: 540,
+    noise: 0.06,
+    gain: 0.5,
+    progression: [0, 7, 5],
+  },
+  // Tanpura-like drone with a slow, gentle raga bend.
+  ancient_india: {
+    root: 130.81,
+    intervals: [1, 1.5, 2],
+    type: "triangle",
+    cutoff: 760,
+    noise: 0.03,
+    gain: 0.5,
+    progression: [0, 3, 2],
+  },
+  // Stark bare fifths sinking into a cold modal descent.
+  viking_norse: {
+    root: 87.31,
+    intervals: [1, 1.5],
+    type: "triangle",
+    cutoff: 460,
+    noise: 0.06,
+    gain: 0.5,
+    progression: [0, -2, -5],
+  },
+  // Shimmering maqam-Hijaz color (the augmented-second step).
+  islamic_golden_age: {
+    root: 146.83,
+    intervals: [1, 1.25, 1.5],
+    type: "sine",
+    cutoff: 980,
+    noise: 0.04,
+    gain: 0.45,
+    progression: [0, 1, 4],
+  },
+  // Warm major triads swaying like a choral himene.
+  polynesia: {
+    root: 130.81,
+    intervals: [1, 1.25, 1.5],
+    type: "sine",
+    cutoff: 900,
+    noise: 0.05,
+    gain: 0.45,
+    progression: [0, 5, 7, 5],
+  },
+  // Bright parlor-song major — a homey I–IV–vi–V.
+  american_19c: {
+    root: 110,
+    intervals: [1, 1.25, 1.5],
+    type: "triangle",
+    cutoff: 820,
+    noise: 0.03,
+    gain: 0.48,
+    progression: [0, 5, 9, 7],
+  },
   // Neutral hub — the calmest movement, a gentle two-chord breath.
   atrium: {
     root: 130.81,

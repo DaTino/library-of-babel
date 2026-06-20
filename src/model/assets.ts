@@ -1,4 +1,4 @@
-import type { Room, SourceRef } from "./types";
+import type { Artwork, Museum, Room, SourceRef } from "./types";
 
 export type AssetKind = "painting" | "artifact" | "centerpiece" | "book";
 
@@ -62,4 +62,30 @@ export function collectRoomAssets(room: Room): AssetEntry[] {
   }
 
   return out;
+}
+
+/**
+ * Every cached image URL referenced by the rooms on one floor (texture budget,
+ * §12). On a floor change we keep these and dispose all other tracked textures
+ * (see scene/textureBudget.ts), bounding GPU texture memory to one floor.
+ */
+export function floorArtUrls(museum: Museum, level: number): Set<string> {
+  const urls = new Set<string>();
+  const floor = museum.floors.find((f) => f.level === level);
+  if (!floor) return urls;
+
+  const add = (a?: Artwork) => {
+    if (!a) return;
+    urls.add(a.thumbUrl);
+    urls.add(a.imageUrl);
+  };
+
+  for (const room of floor.rooms) {
+    for (const wall of room.artWalls) {
+      add(wall.painting);
+      add(wall.shelfItem);
+    }
+    add(room.centerpiece);
+  }
+  return urls;
 }

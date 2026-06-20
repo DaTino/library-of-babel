@@ -1,6 +1,9 @@
-import { useTexture } from "@react-three/drei";
+import { Suspense, useEffect } from "react";
+import { Billboard, useTexture } from "@react-three/drei";
 import { SRGBColorSpace } from "three";
+import type { Artwork } from "../model/types";
 import type { InteractableData } from "../interaction/types";
+import { trackTexture } from "./textureBudget";
 
 /**
  * A textured plane for a cached artwork image (§8). The image is served from our
@@ -22,6 +25,11 @@ export function ArtImage({
   const texture = useTexture(url);
   texture.colorSpace = SRGBColorSpace;
 
+  // Register for the texture-budget pass (disposed on floor exit, §12).
+  useEffect(() => {
+    trackTexture(url, texture);
+  }, [url, texture]);
+
   let w = width;
   let h = height;
   const img = texture.image as { width?: number; height?: number } | undefined;
@@ -36,5 +44,42 @@ export function ArtImage({
       <planeGeometry args={[w, h]} />
       <meshBasicMaterial map={texture} toneMapped={false} />
     </mesh>
+  );
+}
+
+/**
+ * A billboarded artwork sprite (§6.3) — used for shelf artifacts and the central
+ * centerpiece. Shows the real cached image when present, falling back to a solid
+ * sprite while it loads (or when content is uncached). The `userData` makes the
+ * sprite interactable whether the image has loaded yet or not.
+ */
+export function BillboardArtwork({
+  artwork,
+  width,
+  height,
+  position,
+  fallbackColor,
+  userData,
+}: {
+  artwork: Artwork;
+  width: number;
+  height: number;
+  position?: [number, number, number];
+  fallbackColor: string;
+  userData: InteractableData;
+}) {
+  return (
+    <Billboard position={position}>
+      <Suspense
+        fallback={
+          <mesh userData={userData}>
+            <planeGeometry args={[width, height]} />
+            <meshBasicMaterial color={fallbackColor} toneMapped={false} />
+          </mesh>
+        }
+      >
+        <ArtImage url={artwork.thumbUrl} width={width} height={height} userData={userData} />
+      </Suspense>
+    </Billboard>
   );
 }

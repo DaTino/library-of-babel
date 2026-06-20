@@ -1,7 +1,7 @@
-import { Billboard } from "@react-three/drei";
 import { DoubleSide } from "three";
 import type { Artwork } from "../../model/types";
 import { interactable } from "../../interaction/types";
+import { BillboardArtwork } from "../ArtImage";
 
 /** Large central sculpture as a billboarded sprite on a plinth (§3.1 / §6.3). */
 export function Centerpiece({ artwork }: { artwork: Artwork }) {
@@ -16,19 +16,19 @@ export function Centerpiece({ artwork }: { artwork: Artwork }) {
         <cylinderGeometry args={[0.55, 0.65, 0.7, 24]} />
         <meshStandardMaterial color="#1d1a16" roughness={0.8} />
       </mesh>
-      <Billboard position={[0, 1.7, 0]}>
-        <mesh
-          userData={interactable({
-            kind: "centerpiece",
-            id: artwork.id,
-            label: artwork.title,
-            artwork,
-          })}
-        >
-          <planeGeometry args={[1.5, 2.1]} />
-          <meshBasicMaterial color="#d8c79a" toneMapped={false} />
-        </mesh>
-      </Billboard>
+      <BillboardArtwork
+        artwork={artwork}
+        width={1.5}
+        height={2.1}
+        position={[0, 1.7, 0]}
+        fallbackColor="#d8c79a"
+        userData={interactable({
+          kind: "centerpiece",
+          id: artwork.id,
+          label: artwork.title,
+          artwork,
+        })}
+      />
     </group>
   );
 }

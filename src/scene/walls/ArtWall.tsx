@@ -1,9 +1,8 @@
 import { Suspense } from "react";
-import { Billboard } from "@react-three/drei";
 import type { ArtWall as ArtWallModel, BookRef, RoomTheme } from "../../model/types";
 import { wallTransform } from "../../geometry/hexagon";
 import { interactable } from "../../interaction/types";
-import { ArtImage } from "../ArtImage";
+import { ArtImage, BillboardArtwork } from "../ArtImage";
 
 const SPINE_COLORS = ["#7a2230", "#3a5f4a", "#2f4a6b", "#6b4f1f", "#4a2f5e", "#205a52"];
 
@@ -63,19 +62,19 @@ export function ArtWall({ wall, theme }: { wall: ArtWallModel; theme: RoomTheme 
           <cylinderGeometry args={[0.32, 0.4, 0.16, 16]} />
           <meshStandardMaterial color="#2a2620" roughness={0.7} />
         </mesh>
-        <Billboard position={[0, 0.62, 0]}>
-          <mesh
-            userData={interactable({
-              kind: "artifact",
-              id: wall.shelfItem.id,
-              label: wall.shelfItem.title,
-              artwork: wall.shelfItem,
-            })}
-          >
-            <planeGeometry args={[0.72, 0.92]} />
-            <meshBasicMaterial color={accent} toneMapped={false} />
-          </mesh>
-        </Billboard>
+        <BillboardArtwork
+          artwork={wall.shelfItem}
+          width={0.72}
+          height={0.92}
+          position={[0, 0.62, 0]}
+          fallbackColor={accent}
+          userData={interactable({
+            kind: "artifact",
+            id: wall.shelfItem.id,
+            label: wall.shelfItem.title,
+            artwork: wall.shelfItem,
+          })}
+        />
       </group>
     </group>
   );

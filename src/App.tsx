@@ -8,6 +8,8 @@ import { Transition } from "./ui/Transition";
 import { useAudio } from "./audio/useAudio";
 import { placeholderContent } from "./data/placeholder";
 import { deriveMuseum, roomsById } from "./model/deriveMuseum";
+import { floorArtUrls } from "./model/assets";
+import { releaseTexturesExcept } from "./scene/textureBudget";
 import { FLOORS } from "./config/layout";
 import { loadCachedContent } from "./content/load";
 import { EYE_HEIGHT } from "./geometry/hexagon";
@@ -42,6 +44,13 @@ export default function App() {
     document.addEventListener("pointerlockchange", onChange);
     return () => document.removeEventListener("pointerlockchange", onChange);
   }, [setLocked]);
+
+  // Texture-budget pass (§12): when the visitor changes floors (or content swaps
+  // in), drop every cached texture that isn't on the current floor. Safe because
+  // floors only meet at the art-less atria, so nothing on screen is dropped.
+  useEffect(() => {
+    releaseTexturesExcept(floorArtUrls(museum, room.floorLevel));
+  }, [museum, room.floorLevel]);
 
   return (
     <div className="app">

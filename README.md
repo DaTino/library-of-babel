@@ -61,7 +61,9 @@ scripts/fetch-content.ts  # build-time fetcher: Met art + Gutenberg texts → pu
 
 ## Status
 
-**Phase 6 — Content curation ✅** (see §10). Two floors, **12 cultures**, real Met art per
-room, and **360 unique texts** (10 per shelf, no repeats anywhere) spanning fiction,
+**Phase 6 — Content curation ✅** (see §10), plus post-v1 floors. **Three floors, 18 cultures**
+(the third — _The Lantern Gallery_ — adds Plains Nations, Ancient India, Viking Scandinavia,
+the Islamic Golden Age, Polynesia, and 19th-century America), real Met + Wikimedia Commons art
+per room, and **540 unique texts** (10 per shelf, no repeats anywhere) spanning fiction,
 non-fiction, poetry, plays, and essays. Run `npm run fetch:content` to populate. **All
 build-plan phases (0–6) are complete.**

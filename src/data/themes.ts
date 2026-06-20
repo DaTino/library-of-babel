@@ -77,6 +77,44 @@ export const CULTURE_THEMES: Record<CultureId, RoomTheme> = {
     ambientLight: { color: "#7a8aa0", intensity: 0.5 },
     materials: { floor: "#3a342b", wall: "#d8cdb0" },
   },
+
+  // --- The Lantern Gallery (top floor) ---
+  plains_lakota: {
+    palette: ["#a83e2a", "#caa15a", "#3a5a7a"],
+    keyLight: { color: "#ffe2b0", intensity: 1.15 },
+    ambientLight: { color: "#9a7a5a", intensity: 0.5 },
+    materials: { floor: "#6e4a32", wall: "#cda878" },
+  },
+  ancient_india: {
+    palette: ["#c8762a", "#9a2a3a", "#1f6a5a"],
+    keyLight: { color: "#ffe6b0", intensity: 1.15 },
+    ambientLight: { color: "#b07a4a", intensity: 0.5 },
+    materials: { floor: "#6e4630", wall: "#d3b483" },
+  },
+  viking_norse: {
+    palette: ["#3a4a5a", "#6e2a2a", "#8a7a64"],
+    keyLight: { color: "#d8e4f0", intensity: 1.0 },
+    ambientLight: { color: "#5a6a7a", intensity: 0.45 },
+    materials: { floor: "#2e2a26", wall: "#5a5e62" },
+  },
+  islamic_golden_age: {
+    palette: ["#1f8a82", "#c9a23a", "#26407a"],
+    keyLight: { color: "#fff2da", intensity: 1.2 },
+    ambientLight: { color: "#4a8a86", intensity: 0.55 },
+    materials: { floor: "#26384a", wall: "#cdbf9a" },
+  },
+  polynesia: {
+    palette: ["#1f8a8a", "#a8512a", "#d8b888"],
+    keyLight: { color: "#fff2dc", intensity: 1.15 },
+    ambientLight: { color: "#5a8a86", intensity: 0.5 },
+    materials: { floor: "#3a2e24", wall: "#c7a878" },
+  },
+  american_19c: {
+    palette: ["#2a3a5a", "#7a2a2a", "#d8c8a8"],
+    keyLight: { color: "#ffecc8", intensity: 1.1 },
+    ambientLight: { color: "#7a6a5a", intensity: 0.5 },
+    materials: { floor: "#4a3525", wall: "#d8caa8" },
+  },
 };
 
 /** Neutral, legible atrium bed (§3.2) — the wayfinding anchor. */
