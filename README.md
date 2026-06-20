@@ -34,8 +34,9 @@ the source of truth and is updated in place as decisions are made.
 - **R** return to the floor's atrium · **C** Sources & licenses · **M** mute · **Esc** release / close
 - Ambient audio fades in when you enter and crossfades as you move between rooms
 
-> **Real content:** run `npm run fetch:content` once to cache real Met art (12 cultures) +
-> ~360 Gutenberg texts — it takes a few minutes (otherwise you'll see styled placeholders).
+> **Real content:** run `npm run fetch:content` once to cache real Met + Wikimedia Commons art
+> (18 cultures) + 540 Gutenberg texts — it takes several minutes (otherwise you'll see styled
+> placeholders).
 
 See [`startup.md`](./startup.md) for full setup and prerequisites.
 
@@ -56,7 +57,7 @@ src/
   ui/                   # Hud, Overlays, Transition, overlays/ (art viewer, reader, sources)
   state/store.ts        # Zustand store (navigation, overlays, audio)
   App.tsx / main.tsx
-scripts/fetch-content.ts  # build-time fetcher: Met art + Gutenberg texts → public/content/ (§8)
+scripts/fetch-content.ts  # build-time fetcher: Met + Commons art + Gutenberg texts → public/content/ (§8)
 ```
 
 ## Status

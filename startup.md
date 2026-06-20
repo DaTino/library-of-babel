@@ -37,15 +37,15 @@ The server hot-reloads as you edit files. Stop it with **Ctrl+C**.
 
 ## Load real content (optional)
 
-The app ships with styled placeholders. To populate **real open-licensed art (The Met) and
-full texts (Project Gutenberg)**:
+The app ships with styled placeholders. To populate **real open-licensed art (The Met +
+Wikimedia Commons) and full texts (Project Gutenberg)**:
 
 ```bash
 npm run fetch:content
 ```
 
-This caches art for 12 cultures + ~360 texts under `public/content/` (git-ignored), so it
-takes a few minutes; reload the page when it finishes. If the Met API throttles one
+This caches art for 18 cultures + 540 texts under `public/content/` (git-ignored), so it
+takes several minutes; reload the page when it finishes. If the Met API throttles one
 culture's art, re-fetch just that culture with `ART_ONLY=rome,edo_japan npm run fetch:content`.
 
 ## 3. Explore the room

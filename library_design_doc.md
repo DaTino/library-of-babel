@@ -360,8 +360,8 @@ Implementation notes:
 
 - One normalized book pool, sampled per shelf.
 - Optional per-shelf seed so a shelf is consistent within a session but differs across rooms/visits.
-- Keep a small "featured/legible" subset (e.g., Standard Ebooks) weighted slightly higher so shelves aren't all obscure.
-- **Phase 6:** **10 books per shelf**, dealt out **uniquely** across every shelf so no text repeats within or across rooms (36 shelves × 10 = **360 texts**), with **genre variety** — fiction, non-fiction, poetry, drama/plays, and essays — gathered via Gutendex `topic` buckets (`scripts/fetch-content.ts`) and dealt by `content/provider.ts`.
+- ✅ **Done (v0.14):** a "featured/legible" subset — the top ~30% by Gutenberg download count — is weighted higher so every shelf gets a few recognizable titles, not all obscure (`content/provider.ts`).
+- **Phase 6 (scaled in v0.15):** **10 books per shelf**, dealt out **uniquely** across every shelf so no text repeats within or across rooms (**54 shelves × 10 = 540 texts** across three floors), with **genre variety** — fiction, non-fiction, poetry, drama/plays, and essays — gathered via Gutendex `topic` buckets (`scripts/fetch-content.ts`) and dealt by `content/provider.ts`.
 
 ---
 
@@ -378,7 +378,7 @@ Implementation notes:
 | 5   | **Renaissance Italy**           | ~14th–16th c.                                                          | AIC, Rijksmuseum, Met, Getty, Europeana                                        |
 | 6   | **Elizabethan / Tudor England** | ~1485–1603                                                             | Met, AIC, Wikimedia (portraiture)                                              |
 
-**Upper Gallery (floor 2, Phase 6):** six further cultures replace the v0.3 repeats — **Ancient Mesopotamia**, **Pacific Northwest Coast**, **Ancient Rome**, **Mali & Songhai**, **Napoleonic France**, **Edo Japan** — each with its own theme, ambient bed (§6.6), and Met sourcing (12 cultures total). Literature stays the shared global pool (§8.5). Thin spots (Pacific NW, Mali/Songhai) lean on a whole-collection Met search; placeholders fill any remainder (§12).
+**Upper Gallery (floor 2, Phase 6):** six further cultures replace the v0.3 repeats — **Ancient Mesopotamia**, **Pacific Northwest Coast**, **Ancient Rome**, **Mali & Songhai**, **Napoleonic France**, **Edo Japan** — each with its own theme, ambient bed (§6.6), and Met sourcing (12 cultures across the first two floors). Literature stays the shared global pool (§8.5). Thin spots (Pacific NW, Mali/Songhai) lean on a whole-collection Met search; placeholders fill any remainder (§12).
 
 **The Lantern Gallery (floor 3, v0.15):** a third ring crowns the tower — **Plains Nations (Lakota)**, **Ancient India (Indus–Maurya)**, **Viking Age Scandinavia**, **The Islamic Golden Age**, **Polynesia**, and **19th-Century America** — each with its own theme + ambient bed (§6.6), bringing the tower to **18 cultures across three floors**. All six are department-scoped at the Met (Islamic Art; the American Wing; Asian Art for India; Medieval Art for the Vikings; Arts of Africa/Oceania/the Americas for Plains & Polynesia), with search terms tuned to stay on-theme — the whole-collection and broad queries otherwise drag in off-theme hits (a NASA "Viking" Mars lander, Andean "Plains" objects; §12). Curated **Wikimedia Commons** categories back up the rooms the Met is thin on (the Vikings; §8.2). The shared book pool (§8.5) is sized up to **540 texts** to fill all 54 shelves uniquely.
 
@@ -422,7 +422,7 @@ Phases 0–6 are complete (v1 is feature- and content-complete). Nothing below i
   - **Walkable spiral staircase** instead of the stylized transition (Q13) — watch camera collision + motion comfort (§12).
   - **Positional audio** — a fountain in the atrium, murmurs near shelves (§6.6, "optional later").
   - Optional **bookmarks/favorites** if visitors want persistence (revisit Q8 — currently stateless).
-- **More floors / themed sets.** The tower is finite and fully authored (§2.6); appending a floor to `FLOORS` with its own cultures + art is cheap (e.g. a floor of modern movements, or of mythologies).
+- **More floors / themed sets.** ✅ **Exercised (v0.15)** — added a third floor (_The Lantern Gallery_: Plains Nations, Ancient India, Viking Scandinavia, the Islamic Golden Age, Polynesia, 19th-c. America) through this seam. Appending further floors to `FLOORS` with their own cultures + art stays cheap (e.g. a floor of modern movements, or of mythologies); the tower remains finite (§2.6).
 
 ---
 
