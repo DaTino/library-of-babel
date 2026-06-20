@@ -59,7 +59,9 @@ export function ArtViewer({ artwork, onClose }: { artwork: Artwork; onClose: () 
         <div className="art-meta__title">
           <h2>{artwork.title}</h2>
           {(artwork.creator ?? artwork.date) && (
-            <p className="art-meta__by">{[artwork.creator, artwork.date].filter(Boolean).join(" · ")}</p>
+            <p className="art-meta__by">
+              {[artwork.creator, artwork.date].filter(Boolean).join(" · ")}
+            </p>
           )}
         </div>
         <div className="art-meta__controls">

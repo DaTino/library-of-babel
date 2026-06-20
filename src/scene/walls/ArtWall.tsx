@@ -39,7 +39,12 @@ export function ArtWall({ wall, theme }: { wall: ArtWallModel; theme: RoomTheme 
               </mesh>
             }
           >
-            <ArtImage url={wall.painting.thumbUrl} width={1.9} height={1.2} userData={paintingData} />
+            <ArtImage
+              url={wall.painting.thumbUrl}
+              width={1.9}
+              height={1.2}
+              userData={paintingData}
+            />
           </Suspense>
         </group>
       </group>

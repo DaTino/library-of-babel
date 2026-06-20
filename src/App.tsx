@@ -45,7 +45,10 @@ export default function App() {
 
   return (
     <div className="app">
-      <Canvas dpr={[1, 2]} camera={{ position: [0, EYE_HEIGHT, 2.2], fov: 70, near: 0.1, far: 100 }}>
+      <Canvas
+        dpr={[1, 2]}
+        camera={{ position: [0, EYE_HEIGHT, 2.2], fov: 70, near: 0.1, far: 100 }}
+      >
         <color attach="background" args={["#07070a"]} />
         <fog attach="fog" args={["#07070a", 10, 30]} />
         {/* Keyed by room id so each scene fully mounts/disposes on travel (§2.4). */}

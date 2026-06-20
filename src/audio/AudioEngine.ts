@@ -1,4 +1,4 @@
-import type { AudioProfile } from "./profiles";
+import { DEFAULT_PROGRESSION, semitoneRatio, type AudioProfile } from "./profiles";
 
 interface Bed {
   gain: GainNode;
@@ -6,6 +6,9 @@ interface Bed {
 }
 
 const CROSSFADE = 1.2; // seconds — a touch longer than the visual fade (§2.4)
+const BED_LEVEL = 0.6; // global scalar on every bed's gain — keeps the ambience quiet
+const CHORD_DUR = 12; // seconds each chord in the progression is held
+const CHORD_GLIDE = 3.5; // seconds to glide between chords (portamento, stays ambient)
 
 /**
  * Procedural ambient audio (§6.6). One generated "bed" per room (drone chord +
@@ -54,7 +57,7 @@ class AudioEngine {
 
     const next = this.buildBed(profile);
     next.gain.gain.setValueAtTime(0, t);
-    next.gain.gain.linearRampToValueAtTime(profile.gain, t + CROSSFADE);
+    next.gain.gain.linearRampToValueAtTime(profile.gain * BED_LEVEL, t + CROSSFADE);
 
     const prev = this.current;
     if (prev) {
@@ -90,12 +93,28 @@ class AudioEngine {
     const oscs = profile.intervals.map((mult, i) => {
       const o = ctx.createOscillator();
       o.type = profile.type;
-      o.frequency.value = profile.root * mult;
+      o.frequency.value = profile.root * mult; // chord step 0 (no transposition)
       o.detune.value = (i - 1) * 5; // gentle chorus
       o.connect(filter);
       o.start();
       return o;
     });
+
+    // Walk this culture's chord progression: every CHORD_DUR seconds, glide each
+    // voice to the next chord (the whole drone transposed by a semitone offset).
+    const progression = profile.progression ?? DEFAULT_PROGRESSION;
+    let step = 0;
+    const progress = window.setInterval(() => {
+      step = (step + 1) % progression.length;
+      const transpose = semitoneRatio(progression[step]);
+      const now = ctx.currentTime;
+      oscs.forEach((o, i) => {
+        const target = profile.root * profile.intervals[i] * transpose;
+        o.frequency.cancelScheduledValues(now);
+        o.frequency.setValueAtTime(o.frequency.value, now);
+        o.frequency.linearRampToValueAtTime(target, now + CHORD_GLIDE);
+      });
+    }, CHORD_DUR * 1000);
 
     let noise: AudioBufferSourceNode | null = null;
     if (profile.noise > 0) {
@@ -117,6 +136,7 @@ class AudioEngine {
     }
 
     const stop = () => {
+      window.clearInterval(progress);
       try {
         oscs.forEach((o) => o.stop());
         lfo.stop();

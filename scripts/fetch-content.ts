@@ -160,7 +160,9 @@ async function fetchArt(culture: CultureId) {
     }
   }
   if (out.length < ART_PER_CULTURE) {
-    console.warn(`  ⚠ ${culture}: only ${out.length}/${ART_PER_CULTURE} (thin — placeholders fill the gaps)`);
+    console.warn(
+      `  ⚠ ${culture}: only ${out.length}/${ART_PER_CULTURE} (thin — placeholders fill the gaps)`,
+    );
   }
   return out;
 }

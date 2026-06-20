@@ -5,9 +5,9 @@
  * adjacent vertices and its midpoint sits on the apothem circle.
  */
 
-export const HEX_RADIUS = 4.2; // circumradius (m); for a regular hexagon, side length = radius
+export const HEX_RADIUS = 6.5; // circumradius (m); for a regular hexagon, side length = radius
 export const WALL_HEIGHT = 4.5; // §3.1 "moderate height (~4–5 m)"
-export const EYE_HEIGHT = 1.6;
+export const EYE_HEIGHT = 2.2;
 export const APOTHEM = HEX_RADIUS * Math.cos(Math.PI / 6); // center → wall midpoint
 export const PLAYER_RADIUS = 0.45; // keep-out margin from the walls
 export const MAX_WALK_RADIUS = APOTHEM - PLAYER_RADIUS;

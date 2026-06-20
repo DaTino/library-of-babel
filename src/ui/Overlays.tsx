@@ -25,7 +25,9 @@ export function Overlays({ room }: { room: Room }) {
 
   return (
     <div className="overlay-root">
-      {overlay === "art" && activeArtwork && <ArtViewer artwork={activeArtwork} onClose={closeOverlay} />}
+      {overlay === "art" && activeArtwork && (
+        <ArtViewer artwork={activeArtwork} onClose={closeOverlay} />
+      )}
       {overlay === "reader" && activeBook && <Reader book={activeBook} onClose={closeOverlay} />}
       {overlay === "credits" && <CreditsPanel room={room} onClose={closeOverlay} />}
     </div>

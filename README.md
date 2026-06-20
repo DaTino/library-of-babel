@@ -13,14 +13,14 @@ the source of truth and is updated in place as decisions are made.
 
 ## Scripts
 
-| command           | what                                          |
-| ----------------- | --------------------------------------------- |
-| `npm run dev`     | start the dev server                          |
-| `npm run build`   | type-check (`tsc -b`) + production build       |
-| `npm run preview` | preview the production build                   |
-| `npm run lint`    | ESLint                                         |
-| `npm run format`  | Prettier (write)                              |
-| `npm test`        | run unit tests (Vitest)                       |
+| command                 | what                                            |
+| ----------------------- | ----------------------------------------------- |
+| `npm run dev`           | start the dev server                            |
+| `npm run build`         | type-check (`tsc -b`) + production build        |
+| `npm run preview`       | preview the production build                    |
+| `npm run lint`          | ESLint                                          |
+| `npm run format`        | Prettier (write)                                |
+| `npm test`              | run unit tests (Vitest)                         |
 | `npm run fetch:content` | cache real art + texts → `public/content/` (§8) |
 
 ## Explore
@@ -51,7 +51,7 @@ src/
   navigation/entry.ts   # where the camera lands when arriving in a room
   controls/             # first-person pointer-lock + WASD (swappable seam for WebXR)
   interaction/          # center-screen raycast (hover / click → overlay or travel)
-  audio/                # procedural ambient soundscapes (Web Audio, crossfade, mute, §6.6)
+  audio/                # procedural ambient soundscapes (Web Audio, per-culture chord progression, crossfade, mute, §6.6)
   scene/                # Scene switch, Room, Atrium, HexShell, walls/, props/, CameraRig, NavTriggers, ArtImage
   ui/                   # Hud, Overlays, Transition, overlays/ (art viewer, reader, sources)
   state/store.ts        # Zustand store (navigation, overlays, audio)

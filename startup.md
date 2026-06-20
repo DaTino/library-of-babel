@@ -63,10 +63,10 @@ culture's art, re-fetch just that culture with `ART_ONLY=rome,edo_japan npm run 
 | command           | what it does                                   |
 | ----------------- | ---------------------------------------------- |
 | `npm run dev`     | start the dev server (hot reload)              |
-| `npm run build`   | type-check + production build → `dist/`         |
-| `npm run preview` | serve the production build at `localhost:4173`  |
+| `npm run build`   | type-check + production build → `dist/`        |
+| `npm run preview` | serve the production build at `localhost:4173` |
 | `npm test`        | run the unit tests (Vitest)                    |
-| `npm run lint`    | run ESLint                                      |
+| `npm run lint`    | run ESLint                                     |
 | `npm run format`  | format the code with Prettier                  |
 
 ## Production build

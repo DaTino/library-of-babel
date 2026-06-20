@@ -1,13 +1,4 @@
-import type {
-  ArtWall,
-  Artwork,
-  CultureId,
-  Exit,
-  Floor,
-  Museum,
-  Room,
-  RoomTheme,
-} from "./types";
+import type { ArtWall, Artwork, CultureId, Exit, Floor, Museum, Room, RoomTheme } from "./types";
 import type { FloorConfig } from "../config/layout";
 import { FLOORS } from "../config/layout";
 import { cultureTitle } from "./labels";
