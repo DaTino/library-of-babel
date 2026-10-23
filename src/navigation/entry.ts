@@ -7,15 +7,19 @@ export interface EntryTransform {
   yaw: number;
 }
 
-// Stand a little inside the entry doorway, looking toward the center.
-const ENTRY_RADIUS = 2.4;
-const DEFAULT_ENTRY: EntryTransform = { position: [0, EYE_HEIGHT, 2.2], yaw: 0 };
+// Stand a little inside the entry doorway, looking toward the center — far
+// enough out to clear the atrium's stair tower (§2.6).
+const ENTRY_RADIUS = 4.2;
+// First spawn: in the ground-floor atrium, between the tower and a doorway,
+// facing that doorway (and the hallway beyond it).
+const DEFAULT_ENTRY: EntryTransform = { position: [0, EYE_HEIGHT, 4.2], yaw: Math.PI };
 
 /**
- * Where to place the camera when arriving in `room` from `fromRoomId` (§2.4).
- * We enter at the doorway that leads back to where we came from, standing just
- * inside it and facing the room's center. Staircase arrivals (and the initial
- * spawn) use a sensible default near the center.
+ * Where to place the camera when arriving in `room` by a jump (§2.4) — the first
+ * spawn, or R → atrium. We enter at the doorway that leads back to where we came
+ * from, standing just inside it and facing the room's center. Hallway and stair
+ * arrivals don't come through here: those carry the visitor's pose over
+ * continuously (§2.7 / §2.6).
  */
 export function entryTransform(room: Room, fromRoomId: string | null): EntryTransform {
   const back = room.exits.find((e) => e.toRoomId === fromRoomId && e.wallIndex !== undefined);

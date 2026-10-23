@@ -1,11 +1,23 @@
 import { useEffect } from "react";
-import type { Room } from "../model/types";
+import type { Hallway, Room } from "../model/types";
+import { roomDisplayName } from "../model/labels";
 import { useMuseumStore } from "../state/store";
 
-/** 2D heads-up layer over the canvas (§7): room title + floor, reticle + hover
- *  label, enter prompt, and the Sources button. Wayfinding stays minimal (§7.4):
- *  R returns to the floor's atrium, C opens Sources. */
-export function Hud({ room, floorTitle }: { room: Room; floorTitle: string }) {
+/** 2D heads-up layer over the canvas (§7): where you are (room, or the hallway
+ *  you're walking), floor, reticle + hover label, enter prompt, and the Sources
+ *  button. Wayfinding stays minimal (§7.4): R returns to the floor's atrium, C
+ *  opens Sources; in the stair tower's doorway a hint says which way is which. */
+export function Hud({
+  room,
+  rooms,
+  hallways,
+  floorTitle,
+}: {
+  room: Room;
+  rooms: Map<string, Room>;
+  hallways: Map<string, Hallway>;
+  floorTitle: string;
+}) {
   const isLocked = useMuseumStore((s) => s.isLocked);
   const overlay = useMuseumStore((s) => s.overlay);
   const hovered = useMuseumStore((s) => s.hovered);
@@ -14,6 +26,9 @@ export function Hud({ room, floorTitle }: { room: Room; floorTitle: string }) {
   const toggleMute = useMuseumStore((s) => s.toggleMute);
   const muted = useMuseumStore((s) => s.muted);
   const audioEnabled = useMuseumStore((s) => s.audioEnabled);
+  const hallwayId = useMuseumStore((s) => s.hallway?.id ?? null);
+  const climb = useMuseumStore((s) => s.climb);
+  const stairPrompt = useMuseumStore((s) => s.stairPrompt);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -22,7 +37,7 @@ export function Hud({ room, floorTitle }: { room: Room; floorTitle: string }) {
         return;
       }
       const st = useMuseumStore.getState();
-      if (st.overlay !== "none" || st.isTraveling) return;
+      if (st.overlay !== "none" || st.isTraveling || st.climb) return;
       if (e.code === "KeyR") requestTravel(`${room.id.split(":")[0]}:atrium`);
       if (e.code === "KeyC") {
         openCredits();
@@ -34,14 +49,28 @@ export function Hud({ room, floorTitle }: { room: Room; floorTitle: string }) {
   }, [requestTravel, openCredits, room.id]);
 
   const overlayOpen = overlay !== "none";
+  const hallway = hallwayId ? hallways.get(hallwayId) : undefined;
+  const between = hallway?.ends.map((e) => roomDisplayName(e.roomId)).join(" and ");
+  const climbingTo = climb ? rooms.get(climb.toRoomId) : undefined;
+
+  const title = climbingTo
+    ? climb?.dir === 1
+      ? "Ascending the stair"
+      : "Descending the stair"
+    : (hallway?.title ?? room.title);
+  const sub = climbingTo
+    ? `toward ${climbingTo.title}`
+    : hallway
+      ? `${hallway.subtitle} · between ${between}`
+      : `Library of Babel · ${floorTitle}`;
 
   return (
     <>
       <div className="hud">
-        <h1>{room.title}</h1>
-        <p className="hud__sub">Library of Babel · {floorTitle}</p>
+        <h1>{title}</h1>
+        <p className="hud__sub">{sub}</p>
         <p className="hud__hint">
-          <b>WASD</b> move · <b>mouse</b> look · <b>click</b> items · <b>R</b> atrium · <b>C</b>{" "}
+          <b>WASD</b> move · <b>mouse</b> look · <b>click</b> exhibits · <b>R</b> atrium · <b>C</b>{" "}
           sources · <b>M</b> mute · <b>Esc</b> back
         </p>
       </div>
@@ -64,11 +93,31 @@ export function Hud({ room, floorTitle }: { room: Room; floorTitle: string }) {
         </div>
       )}
 
+      {isLocked && !overlayOpen && !climb && stairPrompt && (
+        <div className="stair-hint" aria-hidden="true">
+          {stairPrompt === "both" && (
+            <>
+              Step into the doorway, then turn <b>left ↑ to ascend</b> or <b>right ↓ to descend</b>
+            </>
+          )}
+          {stairPrompt === "up" && (
+            <>
+              Step into the doorway to <b>ascend ↑</b>
+            </>
+          )}
+          {stairPrompt === "down" && (
+            <>
+              Step into the doorway to <b>descend ↓</b>
+            </>
+          )}
+        </div>
+      )}
+
       {!isLocked && !overlayOpen && (
         <div className="prompt" aria-hidden="true">
           <p className="prompt__title">Enter the Library</p>
           <p className="prompt__body">
-            Click to explore · <b>WASD</b> to move · walk through a doorway to travel
+            Click to explore · <b>WASD</b> to move · walk the hallways between rooms
           </p>
         </div>
       )}

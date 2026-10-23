@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { museum } from "../data/placeholder";
-import { roomsById } from "./deriveMuseum";
-import { collectRoomAssets, floorArtUrls } from "./assets";
+import { hallwaysById, roomsById } from "./deriveMuseum";
+import { collectRoomAssets, floorArtUrls, roomHallways } from "./assets";
 import type { Artwork, Museum } from "./types";
 
 const room = roomsById(museum).get("floor-1:egypt")!;
@@ -39,6 +39,7 @@ const twoFloor: Museum = {
         floorLevel: level,
       },
     ],
+    hallways: [],
   })),
 };
 
@@ -64,6 +65,23 @@ describe("collectRoomAssets", () => {
     expect(kinds).toContain("painting");
     expect(kinds).toContain("artifact");
     expect(kinds).toContain("book");
+  });
+});
+
+describe("hallway exhibits in credits + texture budget (§9.1)", () => {
+  const hallways = hallwaysById(museum);
+
+  it("credits the exhibits in every hallway off the room", () => {
+    const assets = collectRoomAssets(room, roomHallways(room, hallways));
+    const kinds = new Set(assets.map((a) => a.kind));
+    expect(kinds).toContain("plate");
+    expect(kinds).toContain("specimen");
+  });
+
+  it("keeps a floor's hallway exhibit images in its texture budget", () => {
+    const ground = floorArtUrls(museum, 0);
+    for (const h of museum.floors.find((f) => f.level === 0)!.hallways)
+      for (const e of h.exhibits) expect(ground.has(e.thumbUrl)).toBe(true);
   });
 });
 

@@ -1,6 +1,6 @@
-import type { Artwork, Museum, Room, SourceRef } from "./types";
+import type { Artwork, Hallway, Museum, Room, SourceRef } from "./types";
 
-export type AssetKind = "painting" | "artifact" | "centerpiece" | "book";
+export type AssetKind = "painting" | "artifact" | "centerpiece" | "book" | "plate" | "specimen";
 
 export interface AssetEntry {
   id: string;
@@ -11,10 +11,11 @@ export interface AssetEntry {
 }
 
 /**
- * Every attributable asset currently loaded in a room (§7.3 / §8.4), de-duped
- * by kind+id (books are sampled from a shared pool, so they can repeat).
+ * Every attributable asset currently loaded in a room (§7.3 / §8.4) — including
+ * the exhibits in the hallways off its doorways (§9.1) — de-duped by kind+id
+ * (books are sampled from a shared pool, so they can repeat).
  */
-export function collectRoomAssets(room: Room): AssetEntry[] {
+export function collectRoomAssets(room: Room, hallways: Hallway[] = []): AssetEntry[] {
   const seen = new Set<string>();
   const out: AssetEntry[] = [];
 
@@ -61,13 +62,36 @@ export function collectRoomAssets(room: Room): AssetEntry[] {
     });
   }
 
+  for (const h of hallways) {
+    for (const e of h.exhibits) {
+      push({
+        id: e.id,
+        title: e.title,
+        kind: e.display === "case" ? "specimen" : "plate",
+        creator: e.creator,
+        source: e.source,
+      });
+    }
+  }
+
+  return out;
+}
+
+/** The hallways opening off a room's doorways (§2.7). */
+export function roomHallways(room: Room, hallways: Map<string, Hallway>): Hallway[] {
+  const out: Hallway[] = [];
+  for (const e of room.exits) {
+    const h = e.hallwayId ? hallways.get(e.hallwayId) : undefined;
+    if (h) out.push(h);
+  }
   return out;
 }
 
 /**
- * Every cached image URL referenced by the rooms on one floor (texture budget,
- * §12). On a floor change we keep these and dispose all other tracked textures
- * (see scene/textureBudget.ts), bounding GPU texture memory to one floor.
+ * Every cached image URL referenced on one floor — its rooms and its hallways
+ * (texture budget, §12). On a floor change we keep these and dispose all other
+ * tracked textures (see scene/textureBudget.ts), bounding GPU texture memory to
+ * one floor.
  */
 export function floorArtUrls(museum: Museum, level: number): Set<string> {
   const urls = new Set<string>();
@@ -87,5 +111,6 @@ export function floorArtUrls(museum: Museum, level: number): Set<string> {
     }
     add(room.centerpiece);
   }
+  for (const h of floor.hallways ?? []) h.exhibits.forEach(add);
   return urls;
 }

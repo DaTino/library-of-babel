@@ -67,6 +67,41 @@ describe("createCachedProvider", () => {
   });
 });
 
+describe("createCachedProvider — hallway exhibits (§9.1)", () => {
+  const withExhibits: CachedManifest = {
+    ...manifest,
+    exhibitsByCategory: {
+      coleoptera: {
+        plates: Array.from({ length: 8 }, (_, i) => art(`plate-${i}`)),
+        specimens: Array.from({ length: 3 }, (_, i) => art(`specimen-${i}`)),
+      },
+    },
+  };
+  const p = createCachedProvider(withExhibits);
+
+  it("hangs 6 distinct plates and 2 specimens from the category's pools", () => {
+    const ex = p.exhibitsFor!(floor, "h1", "coleoptera");
+    expect(ex).toHaveLength(8);
+    expect(new Set(ex.map((e) => e.id)).size).toBe(8);
+    for (const e of ex) {
+      expect(e.id.startsWith(e.display === "case" ? "specimen-" : "plate-")).toBe(true);
+    }
+  });
+
+  it("falls back to placeholders for a category with nothing cached", () => {
+    const ex = p.exhibitsFor!(floor, "h2", "trilobites");
+    expect(ex).toHaveLength(8);
+    expect(ex[0].source.rightsNote).toMatch(/Placeholder/);
+  });
+
+  it("feeds deriveMuseum: every hallway in the tower gets 8 exhibits", () => {
+    const museum = deriveMuseum(FLOORS, p);
+    const hallways = museum.floors.flatMap((f) => f.hallways);
+    expect(hallways).toHaveLength(36);
+    for (const h of hallways) expect(h.exhibits).toHaveLength(8);
+  });
+});
+
 describe("createCachedProvider — featured/legible weighting (§8.5, B1)", () => {
   // download_count descending, so b-0 is the most "featured", b-399 the most obscure.
   const popular: CachedManifest = {

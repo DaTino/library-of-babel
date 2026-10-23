@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { deriveMuseum, roomsById } from "./deriveMuseum";
+import { deriveMuseum, hallwayEndIndex, hallwaysById, roomsById } from "./deriveMuseum";
 import type { ContentProvider, RoomContent } from "./deriveMuseum";
 import type { CultureId, RoomTheme } from "./types";
-import type { FloorConfig } from "../config/layout";
+import { FLOORS, type FloorConfig } from "../config/layout";
 
 const theme: RoomTheme = {
   palette: ["#000"],
@@ -94,6 +94,46 @@ describe("deriveMuseum", () => {
         expect(ids.has(exit.toRoomId)).toBe(true);
       }
     }
+  });
+
+  it("builds one hallway per doorway edge — 12 per floor — shared by both rooms (§2.7)", () => {
+    const m = deriveMuseum([floor("f1", 0)], stubContent);
+    const f = m.floors[0];
+    expect(f.hallways).toHaveLength(12);
+    const byId = hallwaysById(m);
+    for (const room of f.rooms) {
+      for (const exit of room.exits.filter((e) => e.kind === "doorway")) {
+        const h = byId.get(exit.hallwayId!);
+        expect(h, `${room.id} → ${exit.toRoomId}`).toBeDefined();
+        const end = hallwayEndIndex(h!, room.id);
+        expect(end).not.toBe(-1);
+        const here = end as 0 | 1;
+        // This end is this doorway; the other end is the doorway back.
+        expect(h!.ends[here].wallIndex).toBe(exit.wallIndex);
+        const there = h!.ends[here === 0 ? 1 : 0];
+        expect(there.roomId).toBe(exit.toRoomId);
+        const back = roomsById(m)
+          .get(exit.toRoomId)!
+          .exits.find((e) => e.toRoomId === room.id)!;
+        expect(back.hallwayId).toBe(h!.id);
+        expect(back.wallIndex).toBe(there.wallIndex);
+      }
+    }
+  });
+
+  it("hangs 8 attributed exhibits in every hallway, even with no content provider", () => {
+    const m = deriveMuseum([floor("f1", 0)], stubContent);
+    for (const h of m.floors[0].hallways) {
+      expect(h.exhibits).toHaveLength(8);
+      for (const e of h.exhibits) expect(e.source.provider).toBeTruthy();
+    }
+  });
+
+  it("gives all 36 hallways of the real tower distinct categories (config/hallways.ts)", () => {
+    const m = deriveMuseum(FLOORS, stubContent);
+    const cats = m.floors.flatMap((f) => f.hallways.map((h) => h.category));
+    expect(cats).toHaveLength(36);
+    expect(new Set(cats).size).toBe(36);
   });
 
   it("wires a finite staircase: ground up-only, top down-only, middle both", () => {

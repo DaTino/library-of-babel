@@ -9,14 +9,51 @@
  * poetry, drama, essays) and dealt out uniquely at runtime — so it sources
  * enough texts to fill every shelf with no repeats (54 shelves × 10 = 540).
  *
- * Output (git-ignored): public/content/{manifest.json, images/*.jpg, texts/*.txt}
+ * Hallway exhibits (§9.1) — natural-history plates + specimen photos for 36
+ * categories — come from Wikimedia Commons and the Smithsonian (see
+ * fetch-exhibits.ts). The Smithsonian needs a free key in SMITHSONIAN_API_KEY,
+ * read from the environment or a git-ignored `.env.local`.
+ *
+ * Output (git-ignored): public/content/{manifest.json, images/, texts/, exhibits/}
+ *
+ * Partial refreshes (merge into the existing manifest, nothing else touched):
+ *   ART_ONLY=rome,edo_japan npm run fetch:content
+ *   EXHIBITS_ONLY=1 npm run fetch:content            (all 36 categories)
+ *   EXHIBITS_ONLY=coleoptera,odonata npm run fetch:content
  */
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import type { ExhibitCategoryId } from "../src/model/types";
+import { EXHIBIT_CATEGORY_IDS } from "../src/data/exhibits";
+import {
+  COMMONS_OK,
+  commonsAttribution,
+  commonsDownload,
+  commonsJSON,
+  commonsThumb,
+  download,
+  getJSON,
+  normalizeLicense,
+  shuffle,
+  sleep,
+  stripHtml,
+} from "./fetch-utils";
+import { fetchExhibitPool } from "./fetch-exhibits";
+
+// Local secrets (e.g. SMITHSONIAN_API_KEY) live in a git-ignored .env.local.
+for (const file of [".env.local", ".env"]) {
+  try {
+    process.loadEnvFile(file);
+  } catch {
+    /* not present — fine */
+  }
+}
 
 const OUT = "public/content";
 const IMG_DIR = join(OUT, "images");
 const TXT_DIR = join(OUT, "texts");
+const EXHIBIT_DIR = join(OUT, "exhibits");
+const EXHIBIT_URL = "/content/exhibits";
 const MET = "https://collectionapi.metmuseum.org/public/collection/v1";
 const GUTENDEX = "https://gutendex.com";
 
@@ -99,60 +136,10 @@ const BOOK_BUCKETS: { topic?: string; label: string; count: number }[] = [
   { label: "fiction", count: 200 },
 ];
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-// Retry with backoff — the Met API throttles (403/429) under sustained load.
-async function getJSON(url: string, tries = 4, headers?: Record<string, string>): Promise<any> {
-  for (let i = 0; i < tries; i++) {
-    try {
-      const res = await fetch(url, headers ? { headers } : undefined);
-      if (res.status === 403 || res.status === 429 || res.status >= 500) {
-        await sleep(1500 * (i + 1));
-        continue;
-      }
-      if (!res.ok) throw new Error(`${res.status} ${url}`);
-      return await res.json();
-    } catch (e) {
-      if (i === tries - 1) throw e;
-      await sleep(1500 * (i + 1));
-    }
-  }
-  throw new Error(`exhausted retries: ${url}`);
-}
-
-async function download(
-  url: string,
-  dest: string,
-  tries = 3,
-  headers?: Record<string, string>,
-): Promise<void> {
-  for (let i = 0; i < tries; i++) {
-    const res = await fetch(url, headers ? { headers } : undefined);
-    if (res.ok) {
-      await writeFile(dest, Buffer.from(await res.arrayBuffer()));
-      return;
-    }
-    if (i === tries - 1) throw new Error(`${res.status} ${url}`);
-    await sleep(1000 * (i + 1));
-  }
-}
-
-function shuffle<T>(arr: T[]): T[] {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
 // --- Wikimedia Commons supplement (§8.2) -------------------------------------
 // The Met is thin on a few cultures (no single department + niche search terms),
 // so their candidate pools are shallow and a flaky run can leave repeats. Commons
-// tops them up to ART_PER_CULTURE. Educational/personal use → CC0/PD/CC-BY/CC-BY-SA
-// are all in scope (§8.4, Q10). Wikimedia asks clients to send a descriptive UA.
-const COMMONS = "https://commons.wikimedia.org/w/api.php";
-const COMMONS_UA = "LibraryOfBabel-VirtualMuseum/1.0 (educational project; fetch-content)";
-const COMMONS_OK = /cc0|public domain|cc[ -]by(?:[ -]sa)?/i;
+// tops them up to ART_PER_CULTURE (helpers + license rules in fetch-utils.ts).
 
 // Department-scoped cultures whose Met pool is on-theme but shallow/repetitive, so
 // we still cap the Met and blend Commons for variety (§9). Plains art at the Met is
@@ -184,37 +171,6 @@ const COMMONS_QUERIES: Partial<Record<CultureId, string[]>> = {
   polynesia: ["Polynesian art", "Māori carving", "Marquesas Islands tiki", "Hawaiian artifact"],
 };
 
-function stripHtml(s?: string): string | undefined {
-  if (!s) return undefined;
-  return (
-    s
-      .replace(/<[^>]*>/g, "")
-      .replace(/\s+/g, " ")
-      .trim() || undefined
-  );
-}
-
-function normalizeLicense(short: string): string {
-  const s = short.toLowerCase();
-  if (s.includes("cc0")) return "CC0";
-  if (s.includes("public domain") || s === "pd") return "PD";
-  if (s.includes("by-sa")) return "CC-BY-SA";
-  if (s.includes("by")) return "CC-BY";
-  return "other";
-}
-
-// A guaranteed, meaningful credit line (CC-BY/CC-BY-SA legally require attribution,
-// §8.4). Prefer a named Artist/Credit; for self-uploads ("Own work") the uploader
-// IS the author, so name them; never return empty.
-function commonsAttribution(artist?: string, credit?: string, uploader?: string): string {
-  const generic = (s?: string) => !!s && /^(own work|self|self-photographed|unknown)/i.test(s);
-  if (artist && !generic(artist)) return artist;
-  if (uploader) return `${uploader} (via Wikimedia Commons)`;
-  if (artist) return artist; // generic, but better than nothing
-  if (credit && !generic(credit)) return credit;
-  return "Wikimedia Commons";
-}
-
 async function fetchCommonsArt(culture: CultureId, need: number): Promise<unknown[]> {
   const queries = COMMONS_QUERIES[culture];
   if (!queries || need <= 0) return [];
@@ -231,12 +187,12 @@ async function fetchCommonsArt(culture: CultureId, need: number): Promise<unknow
       gsrlimit: "25",
       gsrsearch: `filetype:bitmap ${q}`,
       prop: "imageinfo",
-      iiprop: "url|user|extmetadata",
-      iiurlwidth: "900",
+      iiprop: "url|size|user|extmetadata",
+      iiurlwidth: "960", // a standard Commons thumbnail width (others are refused)
     });
     let data: any;
     try {
-      data = await getJSON(`${COMMONS}?${params}`, 3, { "User-Agent": COMMONS_UA });
+      data = await commonsJSON(params);
     } catch (e) {
       console.warn(`  commons search failed ${culture}/${q}: ${(e as Error).message}`);
       continue;
@@ -250,11 +206,11 @@ async function fetchCommonsArt(culture: CultureId, need: number): Promise<unknow
       if (!info || !meta) continue;
       const licenseShort = stripHtml(meta.LicenseShortName?.value) ?? "";
       if (!COMMONS_OK.test(licenseShort) && !COMMONS_OK.test(meta.License?.value ?? "")) continue;
-      const src = info.thumburl ?? info.url;
-      if (!src) continue;
+      if (!info.url) continue;
+      const src = commonsThumb(info.url, info.width ?? 0, info.thumburl, 960);
       const file = `commons-${p.pageid}.jpg`;
       try {
-        await download(src, join(IMG_DIR, file), 3, { "User-Agent": COMMONS_UA });
+        await commonsDownload(src, join(IMG_DIR, file));
       } catch {
         continue;
       }
@@ -427,7 +383,75 @@ async function fetchBooks() {
   return out;
 }
 
+const MANIFEST = join(OUT, "manifest.json");
+const saveManifest = (manifest: unknown) => writeFile(MANIFEST, JSON.stringify(manifest, null, 2));
+
+/**
+ * Fetch exhibit pools for the given categories (§9.1), merging each into the
+ * manifest and saving as it goes — an interrupted run keeps everything it got,
+ * and `EXHIBITS_ONLY=missing` picks up where it left off.
+ */
+async function fetchExhibits(categories: ExhibitCategoryId[], manifest: any) {
+  const apiKey = process.env.SMITHSONIAN_API_KEY?.trim() || undefined;
+  if (!apiKey) {
+    console.warn(
+      "  ⚠ SMITHSONIAN_API_KEY not set — specimen photos will come from Wikimedia Commons only.\n" +
+        "    (Get a free key at https://api.data.gov/signup/ and put it in .env.local.)",
+    );
+  }
+  await mkdir(EXHIBIT_DIR, { recursive: true });
+  manifest.exhibitsByCategory ??= {};
+  for (const [i, category] of categories.entries()) {
+    process.stdout.write(`  [${i + 1}/${categories.length}] `);
+    manifest.exhibitsByCategory[category] = await fetchExhibitPool(
+      category,
+      EXHIBIT_DIR,
+      EXHIBIT_URL,
+      apiKey,
+    );
+    await saveManifest(manifest);
+  }
+}
+
+/**
+ * Which categories an EXHIBITS_ONLY value means: "1"/"all" = every category,
+ * "missing" = those not cached yet (resume), else a comma-separated list.
+ */
+function exhibitList(value: string, manifest: any): ExhibitCategoryId[] {
+  const v = value.trim();
+  if (/^(1|all|true)$/i.test(v)) return EXHIBIT_CATEGORY_IDS;
+  if (/^missing$/i.test(v)) {
+    const have = manifest.exhibitsByCategory ?? {};
+    return EXHIBIT_CATEGORY_IDS.filter((c) => !(have[c]?.plates?.length > 0));
+  }
+  const wanted = v
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const unknown = wanted.filter((c) => !EXHIBIT_CATEGORY_IDS.includes(c as ExhibitCategoryId));
+  if (unknown.length) throw new Error(`Unknown exhibit categories: ${unknown.join(", ")}`);
+  return wanted as ExhibitCategoryId[];
+}
+
 async function main() {
+  // Exhibits-only merge mode: refresh hallway exhibits without touching art or
+  // texts — `EXHIBITS_ONLY=1` (all), `=missing` (resume), `=coleoptera,odonata`.
+  if (process.env.EXHIBITS_ONLY) {
+    const manifest = JSON.parse(await readFile(MANIFEST, "utf8"));
+    const categories = exhibitList(process.env.EXHIBITS_ONLY, manifest);
+    if (categories.length === EXHIBIT_CATEGORY_IDS.length) {
+      // A full refresh: start clean so superseded images don't pile up. Empty the
+      // folder rather than delete it (Windows refuses if anything holds it open).
+      await mkdir(EXHIBIT_DIR, { recursive: true });
+      for (const f of await readdir(EXHIBIT_DIR)) await rm(join(EXHIBIT_DIR, f), { force: true });
+      manifest.exhibitsByCategory = {};
+    }
+    console.log(`Fetching hallway exhibits — ${categories.length} categories`);
+    await fetchExhibits(categories, manifest);
+    console.log(`\nMerged exhibits for ${categories.length} categories.`);
+    return;
+  }
+
   // Art-only merge mode: refresh art for specific cultures without touching the
   // cached texts or other cultures, e.g. `ART_ONLY=rome,edo_japan npm run fetch:content`.
   const artOnly = process.env.ART_ONLY?.split(",")
@@ -459,11 +483,18 @@ async function main() {
   console.log("Fetching books (global pool by genre, §8.5)…");
   const books = await fetchBooks();
 
-  const manifest = { generatedAt: new Date().toISOString(), artByCulture, books };
-  await writeFile(join(OUT, "manifest.json"), JSON.stringify(manifest, null, 2));
+  // Save art + books now, so a long exhibits phase can be interrupted safely.
+  const manifest: any = { generatedAt: new Date().toISOString(), artByCulture, books };
+  await saveManifest(manifest);
+
+  console.log("Fetching hallway exhibits (§9.1)…");
+  await fetchExhibits(EXHIBIT_CATEGORY_IDS, manifest);
 
   const artCount = Object.values(artByCulture).reduce((n, a) => n + a.length, 0);
-  console.log(`\nDone — ${artCount} artworks, ${books.length} books → ${OUT}/manifest.json`);
+  console.log(
+    `\nDone — ${artCount} artworks, ${books.length} books, ` +
+      `${Object.keys(manifest.exhibitsByCategory).length} exhibit categories → ${MANIFEST}`,
+  );
 }
 
 main().catch((e) => {

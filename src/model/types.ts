@@ -27,6 +27,51 @@ export type CultureId =
   | "polynesia"
   | "american_19c";
 
+/** Natural-history exhibit categories — one per hallway (§2.7 / §9.1). */
+export type ExhibitCategoryId =
+  // Insects (by order)
+  | "coleoptera"
+  | "lepidoptera"
+  | "hymenoptera"
+  | "odonata"
+  | "orthoptera"
+  | "mantodea"
+  | "phasmatodea"
+  | "hemiptera"
+  | "neuroptera"
+  | "diptera"
+  // Other arthropods
+  | "arachnids"
+  | "crustaceans"
+  | "myriapods"
+  | "living_fossils"
+  // Plants, fungi & algae
+  | "herbarium"
+  | "ferns_mosses"
+  | "seeds_cones"
+  | "orchids_carnivorous"
+  | "fungi_lichens"
+  | "seaweeds"
+  | "botanical_plates"
+  // Fossils & deep time
+  | "trilobites"
+  | "ammonites"
+  | "amber"
+  | "marine_reptiles"
+  | "fossil_plants"
+  | "crinoids"
+  | "teeth_bones"
+  // Sea life & the microscopic
+  | "shells"
+  | "corals_echinoderms"
+  | "jellyfish"
+  | "microscopic"
+  // Extras
+  | "minerals"
+  | "meteorites"
+  | "eggs_nests"
+  | "skeletons";
+
 export type License = "CC0" | "PD" | "CC-BY" | "CC-BY-SA" | "other";
 
 /** Attribution + license — REQUIRED on every Artwork and BookRef (§8.4). */
@@ -81,6 +126,40 @@ export interface Exit {
   wallIndex?: number; // 0..5 for horizontal doorways; omitted for the central staircase
   kind: ExitKind;
   toRoomId: string; // target room (or target floor's atrium for staircases)
+  hallwayId?: string; // doorways open onto a walkable hallway (§2.7)
+}
+
+/** How an exhibit is shown in a hallway (§9.1): a framed plate on the wall, or a
+ *  specimen in a glass display case down the middle. */
+export type ExhibitDisplay = "plate" | "case";
+
+/** One hallway exhibit — an Artwork (so the viewer + credits reuse it) plus how
+ *  it's displayed and which category it belongs to. */
+export interface Exhibit extends Artwork {
+  display: ExhibitDisplay;
+  category: ExhibitCategoryId;
+}
+
+/** One end of a hallway: the room it opens into and the wall its doorway is on. */
+export interface HallwayEnd {
+  roomId: string;
+  wallIndex: number;
+}
+
+/**
+ * A walkable hallway joining two rooms (§2.7). It's a self-contained corridor
+ * that exists in *both* rooms' coordinate frames; the visitor swaps frames at the
+ * middle bend, where neither room is visible. `ends[0]` is the canonical origin
+ * that exhibit positions are authored from.
+ */
+export interface Hallway {
+  id: string; // "{floorId}:hall:{a}~{b}"
+  floorLevel: number;
+  ends: [HallwayEnd, HallwayEnd];
+  category: ExhibitCategoryId;
+  title: string; // "Beetles"
+  subtitle: string; // "Coleoptera"
+  exhibits: Exhibit[]; // 8, in slot order (§9.1)
 }
 
 export type RoomKind = "atrium" | "themed";
@@ -103,6 +182,7 @@ export interface Floor {
   title?: string;
   ring: CultureId[]; // ordered themed rooms (6 for now)
   rooms: Room[]; // atrium + themed rooms, DERIVED from ring (§2.5)
+  hallways: Hallway[]; // one per doorway edge (12 per floor), DERIVED (§2.7)
 }
 
 export interface Museum {

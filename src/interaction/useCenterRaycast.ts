@@ -21,8 +21,10 @@ function findInteractable(obj: Object3D | null): Hit | null {
 /**
  * Under pointer lock the cursor is centered, so we raycast from screen-center
  * each frame (§6.5): hover → highlight + label, click → open an overlay (§7) or
- * travel through an exit (§2.4). Paused while unlocked, mid-transition, or while
- * an overlay is open.
+ * start a stair climb (§2.6). The first solid surface stops the ray, so nothing
+ * can be picked through a wall (hallways put exhibits just the other side of
+ * one); decorative overlays opt out of raycasting entirely. Paused while
+ * unlocked, mid-move, or while an overlay is open.
  */
 export function useCenterRaycast() {
   const scene = useThree((s) => s.scene);
@@ -30,7 +32,7 @@ export function useCenterRaycast() {
   const setHovered = useMuseumStore((s) => s.setHovered);
   const openArt = useMuseumStore((s) => s.openArt);
   const openReader = useMuseumStore((s) => s.openReader);
-  const requestTravel = useMuseumStore((s) => s.requestTravel);
+  const startClimb = useMuseumStore((s) => s.startClimb);
 
   const ray = useMemo(() => new Raycaster(), []);
   const center = useMemo(() => new Vector2(0, 0), []);
@@ -47,24 +49,18 @@ export function useCenterRaycast() {
   };
 
   useFrame(() => {
-    const { isLocked, overlay, isTraveling } = useMuseumStore.getState();
-    if (!isLocked || overlay !== "none" || isTraveling) {
+    const { isLocked, overlay, isTraveling, climb } = useMuseumStore.getState();
+    if (!isLocked || overlay !== "none" || isTraveling || climb) {
       clearHover();
       return;
     }
 
     ray.setFromCamera(center, camera);
+    ray.far = MAX_INTERACT_DISTANCE;
     const hits = ray.intersectObjects(scene.children, true);
 
-    let found: Hit | null = null;
-    for (const hit of hits) {
-      if (hit.distance > MAX_INTERACT_DISTANCE) break;
-      const it = findInteractable(hit.object);
-      if (it) {
-        found = it;
-        break;
-      }
-    }
+    // Only the nearest surface counts: an interactable, or a wall that blocks.
+    const found: Hit | null = hits.length > 0 ? findInteractable(hits[0].object) : null;
 
     if ((hoveredRef.current?.id ?? null) === (found?.id ?? null)) return;
 
@@ -86,8 +82,10 @@ export function useCenterRaycast() {
       if (h.kind === "book" && h.book) {
         openReader(h.book);
         document.exitPointerLock();
-      } else if (h.kind === "exit" && h.targetRoomId) {
-        requestTravel(h.targetRoomId); // stays pointer-locked through the fade
+      } else if (h.kind === "stairs" && h.targetRoomId && h.climbDir) {
+        startClimb(h.targetRoomId, h.climbDir); // stays pointer-locked for the climb
+      } else if (h.kind === "exit") {
+        // Doorways are walked through now (§2.7) — hovering just names the way.
       } else if (h.artwork) {
         openArt(h.artwork);
         document.exitPointerLock();
@@ -95,5 +93,5 @@ export function useCenterRaycast() {
     };
     window.addEventListener("pointerdown", onPointerDown);
     return () => window.removeEventListener("pointerdown", onPointerDown);
-  }, [openArt, openReader, requestTravel]);
+  }, [openArt, openReader, startClimb]);
 }

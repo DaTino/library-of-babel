@@ -2,8 +2,8 @@
 
 ### Design Document (living — update as decisions are made)
 
-**Status:** Draft v0.15
-**Last updated:** 2026-06-19
+**Status:** Draft v0.17
+**Last updated:** 2026-10-22
 **Owner:** (you)
 **Build agent:** Claude Code
 
@@ -70,7 +70,9 @@ You cannot satisfy "every room's exits are on alternating walls" _and_ keep a si
 
 This sidesteps the impossibility entirely: no two rooms ever need to coexist in one coordinate space, so contradictory geometry costs nothing.
 
-**Decided (Q2):** transitions are **walkable hallways with a gentle fade**, _not_ render-through-portals. The visitor walks down a short hallway between rooms; the destination scene loads behind the fade. We keep the _topological_ impossibility (you can't draw the whole thing) but avoid _perceptual_ disorientation (no jarring non-Euclidean visuals, no spinning the camera). Lost-but-playful, not nauseating.
+**Decided (Q2):** transitions are **walkable hallways**, _not_ render-through-portals. We keep the _topological_ impossibility (you can't draw the whole thing) but avoid _perceptual_ disorientation (no jarring non-Euclidean visuals, no spinning the camera). Lost-but-playful, not nauseating.
+
+**Updated (v0.16, Q16):** the hallways are now **real, 25 m, exhibit-lined corridors with no fade at all** — the visitor walks the whole way and the destination room is swapped in **out of sight**, at the middle of a bend where neither end is visible. See §2.7. (The fade survives only for the **R → atrium** jump.)
 
 ### 2.5 Floors & ring order (config)
 
@@ -113,7 +115,33 @@ Consequences:
 - **Vertical adjacency:** `atrium(level n) ↔ atrium(level n+1)` via the staircase. **Decided (Q15): the tower is finite** — the ground floor's staircase goes up only, the top floor's goes down only, and the staircase visibly terminates at both ends. Floors are **fully authored**, not procedural (simplifies the content pipeline — no generated upper floors to source). The "endless tower" idea is parked as a possible future mode, not v1.
 - **Floors can be themed sets:** floor 1 = the six cultures here; later floors can be other groupings (e.g., a floor of modern movements, a floor of mythologies). That's a content decision per floor, not an engine change.
 
-The staircase is modeled like a hallway (§2.4): a self-contained vertical scene the visitor walks through, with a gentle fade masking the next floor's load. Keeps traversal walkable and non-disorienting.
+**The stair tower (v0.16, Q13 revisited).** The staircase is an **enclosed spiral stair tower** at the center of every atrium — a stone cylinder (r ≈ 2.9 m) around a central column, with a **doorway on each floor**. Inside, **one continuous helix** climbs the whole museum: 1.5 turns per floor, 8 m floor-to-floor (4.5 m atrium + slab), a flat landing at each doorway. Because the tower is genuinely vertical, stacked floors are **Euclidean** — so a climb is a real walk through real geometry rather than a fade:
+
+- Step into the doorway and turn **left to ascend / right to descend** (or click the flight; the ground floor only goes up, the top only down). A HUD hint says so.
+- The camera is walked in, up (or down) the helix, and out through the far floor's doorway (~9 s). Position is scripted; **look stays free** — the body turns with the spiral and mouse-look is layered on top, with eased starts/stops and no head-bob (motion comfort, §12).
+- During the climb **both atria are drawn**, stacked; their key lights crossfade while the visitor is deep in the tower (out of sight of both). At the far landing the store **re-bases** the coordinates by one floor in the same commit that swaps the scene — invisible.
+- Doorways alternate by half a turn (30°, 210°, …) so each one faces a signed hallway door across the atrium: you step off facing a way onward.
+- Geometry + math: `geometry/stairs.ts`; tower: `scene/props/StairTower.tsx`; animation: `scene/StairClimb.tsx`.
+
+### 2.7 Hallways — walkable corridors with a seamless hand-over (DECIDED, Q16)
+
+Every doorway (12 per floor, **36 in the tower**) opens onto its own **hallway** — a long, lamp-lit corridor of natural-history exhibits (§9.1) — instead of a short dark stub and a fade.
+
+**Shape.** A **Z**: a 9 m leg straight out from the door, a 7 m jog to the right, and a 9 m leg to the far door — **25 m** along the centerline (~8 s at walking pace), 3.6 m wide and 3.6 m high. The Z is **point-symmetric about its midpoint**, so it looks the same from either end and turns the same way (right, then left) whichever way you walk it.
+
+**Why it can't be seen to "swap."** Rooms still never share a coordinate space (§2.4). A hallway belongs to **both** rooms' frames: in room A's frame it's anchored at A's doorway, in B's at B's. While you're in it, only one room is drawn. The trick is _where_ we switch frames: at the **middle of the jog**, where geometry guarantees neither doorway is visible (a unit test casts sight-lines from the whole hand-over zone to both doors and checks every one hits a wall). Crossing the midpoint (+0.45 m hysteresis so it can't flicker) re-expresses the visitor's pose in the far room's frame — world → door-local A → point-reflect → door-local B → world — in the **same render commit** that swaps the scene. Nothing on screen changes.
+
+Supporting details:
+
+- **Lighting.** Hallway surfaces are **unlit** (painted gradients, glow pools under lamps and around picture lights), so room lights never touch them and the corridor looks identical in either room's frame. Fog is global, so it matches too.
+- **Signage is real geometry.** Door signs and hallway plaques are canvas-texture planes (not DOM overlays), so walls hide them.
+- **Picking.** The center-screen raycast now stops at the first solid surface, so nothing can be clicked through a wall.
+- **Walking.** Movement is clamped to a per-room walkable area: the room floor (a ring around the atrium's tower), each door passage, the three hallway legs (capsules), minus the display cases (`navigation/walkable.ts`). Hallways never overlap one another in a room's frame (tested), because every one turns the same way within its own sector.
+- **Audio.** Walking a hallway **blends the two rooms' beds** by how far along you are (equal-power), so the music hands over with your steps (§6.6).
+- **HUD.** In a hallway it names the exhibit ("Beetles · Coleoptera · between Ancient Egypt and The Atrium").
+- **Doorways** are walked through now; hovering one still names where it leads, but clicking no longer teleports.
+
+Code: geometry + transforms `geometry/hallway.ts` (tested); rendering `scene/hallway/HallwayView.tsx`; hand-over in `scene/NavTriggers.tsx` + `scene/CameraRig.tsx`; which category hangs where in **`config/hallways.ts`** (editable, like `layout.ts`).
 
 ---
 
@@ -124,16 +152,17 @@ The staircase is modeled like a hallway (§2.4): a self-contained vertical scene
 - **Shape:** regular hexagonal floor, flat ceiling, moderate height (~4–5 m feel).
 - **Walls (6), alternating by index** — art walls at even indices `{0,2,4}`, exit walls at odd indices `{1,3,5}` (convention; pick one and keep it).
 - **Art wall composition (bottom → top):**
-  - A **bookshelf** at standing height holding several volumes (literature/non-fiction). Book spines are interactable; clicking opens the reader (§7.2).
-  - On **top of the bookshelf:** a **smaller sculpture or artifact** — e.g., a bust, a vessel, a mask, a tool — as a billboarded sprite (§6.3).
-  - On the **upper portion of the wall:** a **framed painting / 2D artwork**, clickable to open the art viewer (§7.1).
-- **Exit wall:** an opening to a short **hallway** that leads to the connected room (per §2.2). Hallway is a transition zone (good place to mask scene loads).
+  - A **bookshelf** at standing height holding several volumes (literature/non-fiction). Book spines are interactable; clicking opens the reader (§7.2). _(v0.17: an open shelf over a cupboard, spines titled.)_
+  - On **top of the bookshelf:** a **smaller sculpture or artifact** — e.g., a bust, a vessel, a mask, a tool — as a billboarded sprite (§6.3). _(v0.17: shown on a mounted card in a small glass case, labelled.)_
+  - On the **upper portion of the wall:** a **framed painting / 2D artwork**, clickable to open the art viewer (§7.1). _(v0.17: with a museum label beside it.)_
+  - **Dressing (v0.17):** a floor and wall finish per culture, skirting, cornice and door frames (§10 "Spruce-up review"); an introductory wall-text panel beside each doorway, facing the hallway.
+- **Exit wall:** an opening to a **hallway** that leads to the connected room (per §2.2) — a 25 m walkable corridor of natural-history exhibits (§2.7, §9.1).
 - **Center:** a **large sculpture** (billboarded or low-poly 3D), with **benches** arranged facing outward toward the art walls.
 
 ### 3.2 Atrium
 
 - Always a **hexagonal** shell (one floor = 6 rooms), with **all 6 walls as exits** (no art walls). No parametric N-gon needed — capacity grows vertically (§2.6).
-- **Center holds the spiral staircase** connecting to the floors above/below (replaces the v0.2 "meta sculpture" idea). On the ground floor it ascends only; interior floors go both ways.
+- **Center holds the spiral stair tower** connecting to the floors above/below (replaces the v0.2 "meta sculpture" idea; §2.6). Its doorway is signed "↑ Ascend · Descend ↓"; on the ground floor it ascends only, on the top floor it descends only. The atrium's floor and ceiling are pierced so the tower runs straight through.
 - Each exit is labeled/themed so the visitor can tell which culture lies beyond (signage, a color/material cue, or a "vestibule" preview). With the staircase, the atrium is the main wayfinding anchor and the floor's identity marker — keep it legible.
 
 ---
@@ -161,10 +190,30 @@ interface Floor {
   title?: string;
   ring: CultureId[]; // ordered themed rooms (6 for now)
   rooms: Room[]; // atrium + themed rooms, DERIVED from ring
+  hallways: Hallway[]; // one per doorway edge (12), DERIVED (§2.7)
 }
 
 // Navigation graph is derived: per-floor wheel (§2.2) + vertical staircase edges
 // atrium(level n) <-> atrium(level n+1).
+
+// A walkable corridor between two rooms (§2.7) — exists in both rooms' frames.
+interface Hallway {
+  id: string; // "{floorId}:hall:{a}~{b}"
+  floorLevel: number;
+  ends: [HallwayEnd, HallwayEnd]; // ends[0] = canonical origin for exhibit placement
+  category: ExhibitCategoryId; // one of 36, each used once (config/hallways.ts)
+  title: string; // "Beetles"
+  subtitle: string; // "Coleoptera"
+  exhibits: Exhibit[]; // 8: 6 wall plates + 2 display cases (§9.1)
+}
+interface HallwayEnd {
+  roomId: string;
+  wallIndex: number;
+}
+interface Exhibit extends Artwork {
+  display: "plate" | "case";
+  category: ExhibitCategoryId;
+}
 
 interface Room {
   id: string; // "atrium-1" | "{floorId}:{CultureId}"
@@ -181,6 +230,7 @@ interface Exit {
   wallIndex?: number; // 0..5 for horizontal doorways
   kind: "doorway" | "staircase-up" | "staircase-down";
   toRoomId: string; // target room (or target floor's atrium for staircases)
+  hallwayId?: string; // doorways open onto a hallway (§2.7)
 }
 
 interface RoomTheme {
@@ -228,7 +278,7 @@ interface SourceRef {
 }
 ```
 
-**Rule:** every `Artwork` and `BookRef` carries a `SourceRef`. Nothing renders without one. See §8.4.
+**Rule:** every `Artwork` and `BookRef` (and so every `Exhibit`) carries a `SourceRef`. Nothing renders without one. See §8.4.
 
 ---
 
@@ -261,25 +311,25 @@ Per §2.4, each room is its own scene graph. Maintain one "active room" plus opt
 ### 6.2 Walls
 
 - Art wall = textured planes: painting plane (upper), bookshelf (model or textured plane with per-spine hit regions), shelf-item sprite.
-- Exit wall = doorway opening + hallway segment. Use the hallway to hide async scene loads (fade or fog).
+- Exit wall = doorway opening + the hallway beyond it (§2.7). The next room is swapped in mid-hallway, out of sight; its images are already local (§8), so nothing visible ever waits on a load.
 
 ### 6.3 Sculptures as billboards
 
-As specified, sculptures/artifacts are **billboarded sprites** (a textured quad that always faces the camera) rather than 3D meshes. This keeps the asset pipeline to 2D images only. Use `THREE.Sprite` or drei's `<Billboard>`. Add a subtle ground shadow/plinth so they don't look like floating cardboard. (3D models can be a later upgrade for centerpieces.)
+As specified, sculptures/artifacts are **billboarded sprites** (a textured quad that always faces the camera) rather than 3D meshes. This keeps the asset pipeline to 2D images only. Use `THREE.Sprite` or drei's `<Billboard>`. Add a subtle ground shadow/plinth so they don't look like floating cardboard. (3D models can be a later upgrade for centerpieces.) **v0.17:** the photos now sit on mounted cards inside glass cases (`props/Vitrine.tsx`) — the centrepiece's card still turns toward the visitor — so a museum photo's rectangular background reads as a mounted print, not a cut-out.
 
 ### 6.4 Lighting & mood
 
-Per-culture `RoomTheme` controls ambient color, key light, and material palette so each wing feels distinct (warm sandstone for Egypt, cool marble for Greece, etc.). Keep it readable — visitors must be able to see the art and read spines.
+Per-culture `RoomTheme` controls ambient color, key light, and material palette so each wing feels distinct (warm sandstone for Egypt, cool marble for Greece, etc.). Keep it readable — visitors must be able to see the art and read spines. **v0.17:** themes also pick a floor and wall finish (`materials.floorStyle` / `wallStyle`, drawn by `scene/surfaces.ts`); atria are lit by three hanging lanterns around the stair tower rather than one central light.
 
 ### 6.5 Interaction
 
-Raycast from camera/cursor. Hover → highlight + label. Click → open the relevant overlay (art viewer or reader). `Esc` closes overlays; movement is locked while an overlay is open.
+Raycast from camera/cursor. Hover → highlight + label. Click → open the relevant overlay (art viewer or reader; hallway exhibits open in the art viewer too). `Esc` closes overlays; movement is locked while an overlay is open. The ray **stops at the first solid surface** (v0.16), so nothing can be picked through a wall; decorative overlays (glass, glows) opt out of raycasting.
 
 ### 6.6 Audio — per-culture ambient soundscape (DECIDED, Q9)
 
 Each themed room has its own **ambient soundscape** (`RoomTheme.ambientAudioUrl`); the atrium has a neutral bed. Implementation:
 
-- Web Audio API. **Crossfade** between soundscapes on room/floor transition (tie the fade to the §2.4 hallway fade so audio and visuals move together).
+- Web Audio API. **Crossfade** between soundscapes on room/floor transition. **Since v0.16** the engine plays a weighted _mix_ of beds: walking a hallway (§2.7) blends the two rooms it joins by how far along you are (equal-power), so the music hands over step by step; a jump (R → atrium) crossfades gently. Beds are built on demand and torn down once silent.
 - Loop seamlessly; keep volume low and non-fatiguing (it's a backdrop, not a score).
 - **Autoplay caveat:** browsers block audio until a user gesture — start the audio context on first click/keypress (e.g., the "enter the museum" action) and show a mute/volume control.
 - Source the audio under the same open-license discipline as everything else (§8.4): CC0/CC-BY ambient/field-recording libraries (e.g., Freesound under CC filters, or commissioned/owned loops). Store a `SourceRef` per track.
@@ -306,6 +356,8 @@ A global "Credits / Sources" view listing every asset currently loaded with prov
 
 Deliberately minimal (the space is supposed to be confusing). The atrium's labeled exits are the anchor. Consider a single "return to atrium" affordance so visitors are never truly lost. **Avoid** a full map — it would defeat §2.3.
 
+Implemented: **R** returns to the floor's atrium (a fade); hovering a doorway names where its hallway leads; in a hallway the HUD names the exhibit and the two rooms it joins; in the stair tower's doorway a hint says which way is up.
+
 ---
 
 ## 8. Content sourcing
@@ -319,10 +371,10 @@ All sources below were checked and are live as of 2026-06-16; **Claude Code shou
 
 ### 8.2 Art & artifacts — strong candidates (verify terms at build)
 
-- **Smithsonian Open Access** — CC0 across many units; huge artifact range. API key (free) via api.data.gov.
+- **Smithsonian Open Access** — ✅ **In use (v0.16)** for the hallway display cases (§9.1): CC0 specimen photographs, mostly from the National Museum of Natural History's education collection (`unit_code:NMNHEDUCATION`, ~6,200 imaged records spanning insects, shells, fossils, minerals, plants…) plus its botany unit (`NMNHBOTANY`, herbarium sheets). Needs a free **api.data.gov key** in `SMITHSONIAN_API_KEY` (env or git-ignored `.env.local`); the fetcher keeps only media whose `usage.access` is `CC0` (the API has no server-side filter for that). Images come from the IDS delivery service at a chosen size (`…/{id}/500`). Without a key, case photos fall back to Commons.
 - **Art Institute of Chicago API** — open access, CC0 subset, clean JSON, IIIF images. Strong for Renaissance/European.
 - **Cleveland Museum of Art Open Access API** — CC0 subset, good JSON.
-- **Wikimedia Commons / Wikidata** (MediaWiki API) — vast public-domain image pool; the broadest coverage for niche cultures (e.g., Olmec/Maya/Aztec artifacts), but licenses are **per-file** — must parse each.
+- **Wikimedia Commons / Wikidata** (MediaWiki API) — vast public-domain image pool; the broadest coverage for niche cultures (e.g., Olmec/Maya/Aztec artifacts), but licenses are **per-file** — must parse each. ✅ In use for thin-culture art (v0.14) and the hallway **plates** (v0.16 — Haeckel, Merian, Besler, Atkins, Mohs and the Biodiversity Heritage Library's scanned plates). **Etiquette (v0.16):** Wikimedia now only renders thumbnails at **standard widths** (250, 330, 500, 960, 1280, 1920 — others return 400), rate-limits bursts of API calls and file downloads (429; originals more strictly than cached thumbnails), and appends `?utm_…` tracking parameters to returned URLs. The fetcher spaces API calls ≥1.1 s and downloads ≥1 s, backs off on 429, never downloads originals, and strips the tracking query before building thumbnail paths.
 - **Openverse** — aggregator over Wikimedia, Smithsonian, Europeana, Flickr Commons, etc. (~800M openly licensed media) with normalized **license + attribution** fields. Good single entry point for the "fill in the gaps" cases; still verify per-item.
 - **Getty Open Content**, **Rijksmuseum API** (Renaissance/European), **Europeana** — additional European/Renaissance depth.
 
@@ -384,6 +436,25 @@ Implementation notes:
 
 **Decided (Q4): art is selected algorithmically.** For each room, the sourcing layer queries the relevant museum APIs (the table above) filtered by culture/department + open-license + has-image, then picks the wall painting, the shelf-top artifact, and the center sculpture from the results. Like the shelves, use a per-room seed so a room is stable within a session but varies across visits. Build in a small **blocklist/quality gate** (skip items with no usable image, tiny resolution, or off-theme tags) and a manual override hook so a bad pick can be pinned/excluded later without going back to hand-curation.
 
+### 9.1 Hallway exhibits — a natural-history Wunderkammer (DECIDED, v0.16)
+
+Each of the **36 hallways** (§2.7) is a small cabinet of curiosities devoted to **one natural-history category** — no category repeats anywhere in the tower. The category for each hallway is authored in **`config/hallways.ts`** (per floor: `spokes[i]` = atrium ↔ ring[i], `rim[i]` = ring[i] ↔ ring[i+1]); the specimens within a category are picked **at random each visit** from its pool (seeded, stable within a session).
+
+**Categories** (`data/exhibits.ts`):
+
+- **Insects, by order:** beetles (Coleoptera) · butterflies & moths (Lepidoptera) · bees, wasps & ants (Hymenoptera) · dragonflies & damselflies (Odonata) · grasshoppers, katydids & crickets (Orthoptera) · mantises (Mantodea) · stick & leaf insects (Phasmatodea) · cicadas & true bugs (Hemiptera) · lacewings & antlions (Neuroptera) · flies (Diptera)
+- **Other arthropods:** spiders & scorpions · crabs, lobsters & barnacles · centipedes & millipedes · horseshoe crabs & sea spiders
+- **Plants, fungi & algae:** the herbarium · ferns, mosses & horsetails · seeds, cones & pods · orchids & carnivorous plants · fungi & lichens · seaweeds (incl. Anna Atkins's 1843 cyanotypes) · botanical plates (Besler's _Hortus Eystettensis_, Redouté)
+- **Fossils & deep time:** trilobites · ammonites & nautiloids · insects in amber · fossil fish & sea dragons · fossil plants · sea lilies & lamp shells · teeth & bones
+- **Sea life & the microscopic:** shells · corals, urchins & starfish · jellyfish & siphonophores · radiolarians & diatoms (Haeckel's _Kunstformen der Natur_)
+- **Earth & extras:** minerals & crystals · meteorites · eggs, nests & feathers · skulls & skeletons
+
+Several assignments nod to the rooms they join (scarabs → Egypt, morphos → Meso-America, ammonite spirals → Greece, the great herbals → Tudor England, Cuvier's mosasaur → Napoleonic France, singing crickets → Edo Japan, Saharan meteorites → Mali & Songhai, the Bone Wars → 19th-century America); the rest are a deliberate mix.
+
+**Display (P4 — "mixed").** Each hallway hangs **8 exhibits**: **6 framed plates** on the walls (two per long leg plus one closing the view at the end of each leg, each with a picture light and a pool of light) and **2 glass display cases** down the middle of the long legs (a specimen photo on a plinth, turned toward the visitor). Every exhibit is clickable — it opens in the art viewer with full attribution — and appears in Sources & Licenses. A name plaque ("NATURAL HISTORY · Beetles · _Coleoptera_") stands just inside each end.
+
+**Sources** (`scripts/fetch-exhibits.ts`): **plates** from Wikimedia Commons (public-domain natural-history illustration — Haeckel, Merian, Besler, Atkins, Mohs, and BHL's scanned plates; license-gated CC0/PD/CC-BY/CC-BY-SA with attribution), dealt round-robin across each category's searches and preferring JPEG scans; **specimens** from the Smithsonian (CC0, §8.2) when a key is set, else Commons photos. Pools per category: 8 plates + 3 specimens; short pools lend to each other and re-hang real items before ever showing a placeholder. Each image is cached twice — 500 px for the wall (texture budget, §12) and up to 1280 px for the viewer. Refresh just the exhibits with `EXHIBITS_ONLY=1` (or `=missing` to resume, or a comma-separated list) — the manifest is saved after every category.
+
 ---
 
 ## 10. Build plan (phases for Claude Code)
@@ -411,7 +482,8 @@ Phases 0–6 are complete (v1 is feature- and content-complete). Nothing below i
 - **Deploy.** The app is a static site (§5): `npm run build` → `dist/`. A deploy/CI pipeline should run `npm run fetch:content` **before** `build` so the cached art + texts (§8) ship with it. Caveats: the current `origin` is a personal GitHub that the corporate security tooling flags as non-allowed — resolve the remote (or pick an approved host: Vercel / Netlify / GitHub Pages) before pushing/deploying, and set Vite `base` for a subpath host (see the `vite.config.ts` note).
 - **Content & sourcing.**
   - ✅ **Done (v0.14).** Weight a **"featured/legible" subset** higher in the global pool (§8.5): the fetcher now records each text's Gutenberg download count (`BookRef.popularity`) and the runtime book-dealer gives every shelf a few high-popularity titles plus the long tail — so shelves aren't all obscure, while each text still appears exactly once.
-  - ✅ **Done (v0.14).** Added **Wikimedia Commons** as a second art source for the Met-thin cultures (§8.2). Cultures without a clean Met department (Pacific Northwest, Mali & Songhai) cap their noisy whole-collection Met share and fill the rest from curated Commons categories (on-theme, properly licensed CC0/PD/CC-BY/CC-BY-SA with attribution); Mesoamerica uses Commons as a shortfall backup. _(Smithsonian Open Access — needs an api.data.gov key — remains a future option.)_
+  - ✅ **Done (v0.14).** Added **Wikimedia Commons** as a second art source for the Met-thin cultures (§8.2). Cultures without a clean Met department (Pacific Northwest, Mali & Songhai) cap their noisy whole-collection Met share and fill the rest from curated Commons categories (on-theme, properly licensed CC0/PD/CC-BY/CC-BY-SA with attribution); Mesoamerica uses Commons as a shortfall backup. _(v0.16: Smithsonian Open Access is now wired in for hallway specimens — §8.2/§9.1; it could also feed room art later.)_
+  - ✅ **Done (v0.16).** **Walkable hallways with natural-history exhibits** (§2.7, §9.1) — 36 corridors, one category each, Commons plates + Smithsonian specimens.
   - Reader **citations / richer metadata** (genre, subjects) surfaced in the reader and Sources panel.
 - **Rendering & performance.**
   - ✅ **Done (v0.14, dispose).** A real **texture-budget pass**: art textures are tracked and disposed on **floor exit** (`scene/textureBudget.ts`), bounding live texture memory to one floor — safe because floors only meet at the art-less atria. _(LOD remains a future option.)_
@@ -419,10 +491,36 @@ Phases 0–6 are complete (v1 is feature- and content-complete). Nothing below i
   - **Code-split** the Three.js bundle (the >500 kB build warning).
 - **Interaction & platform.**
   - **WebXR** — add a controller behind the existing swappable seam (`controls/`, §5 / Q7) for headset exploration.
-  - **Walkable spiral staircase** instead of the stylized transition (Q13) — watch camera collision + motion comfort (§12).
+  - ✅ **Done (v0.16).** **Walked spiral staircase** instead of the fade (Q13) — an enclosed stair tower with an animated climb; position scripted (no collision to get wrong), look free, eased, no head-bob (§2.6).
   - **Positional audio** — a fountain in the atrium, murmurs near shelves (§6.6, "optional later").
   - Optional **bookmarks/favorites** if visitors want persistence (revisit Q8 — currently stateless).
 - **More floors / themed sets.** ✅ **Exercised (v0.15)** — added a third floor (_The Lantern Gallery_: Plains Nations, Ancient India, Viking Scandinavia, the Islamic Golden Age, Polynesia, 19th-c. America) through this seam. Appending further floors to `FLOORS` with their own cultures + art stays cheap (e.g. a floor of modern movements, or of mythologies); the tower remains finite (§2.6).
+
+### Spruce-up review (v0.17)
+
+A walk-through after v0.16 found the rooms looking less finished than the new hallways: flat lighting and grey corners, plain-colored surfaces, photo-rectangle "cut-out" artifacts, blank spines and label cards, and empty, identical atria. Items 1–6 were done in v0.17; 7–16 are **possible to-dos**, none required.
+
+**Done (v0.17):**
+
+1. ✅ **Museum labels** — every painting, shelf artifact, centrepiece and hallway exhibit has a printed label card (title · maker/date · provider + license), drawn on canvas (`scene/Label.tsx`, `labelTexture`; layout in `scene/textLayout.ts`, tested). Plinths are labelled on every side you walk past.
+2. ✅ **Titled book spines** — each shelf's spines are one canvas texture (own color, gilt bands, title running top-to-bottom) laid just in front of the book boxes, which stay clickable (`spinesTexture`).
+3. ✅ **Introductory wall text** — a panel beside every doorway, on the hallway side, introduces the room you're about to enter: floor, name, dates, a short original paragraph (`data/introductions.ts` — 18 cultures + one per atrium). Read as you arrive.
+4. ✅ **Drawn surfaces + real trim** — each culture has a floor style (flagstone, marble, checker, tile, planks, parquet, mosaic, earth, tatami, woven) and a wall style (plaster, ashlar, panelled, mudbrick, shoji, zellige), drawn procedurally in tones multiplied by the theme colors (`scene/surfaces.ts`; set per culture in `data/themes.ts`). Wall textures bake in soft shading at the floor, ceiling and corners (a stand-in for ambient occlusion). Rooms also gained real skirting boards, a cornice, and a moulded frame around every doorway (`scene/HexShell.tsx`).
+5. ✅ **Artifacts in cases** — shelf artifacts and centrepieces now sit on mounted cards inside glass cases (a shared `props/Vitrine.tsx`, also used by the hallway cases), so the photo's rectangle reads as deliberate. The bookcase became a real piece of furniture — an open shelf of books over a cupboard. The centrepiece case blocks walking.
+6. ✅ **Atrium lighting** — the single key light (stuck inside the stair tower since v0.16) became **three hanging lanterns** around the tower, with visible fixtures and halos; the atrium's stone was warmed and lightened. (The climb's light crossfade handles multiple lights.)
+
+**Possible to-dos:**
+
+7. **Post-processing** — ambient occlusion (the biggest single visual jump: kills flat corners and seams), a subtle bloom on lamps and lanterns, a soft vignette, via `@react-three/postprocessing` (a new dependency; costs GPU, so offer a quality toggle).
+8. **Shadows** — soft shadows from key lights (benches, plinths, bookcases), or cheap baked contact shadows under furniture.
+9. **A distinct identity per floor** — e.g. the Ground Floor in sandstone and torchlight, the Upper Gallery in marble with skylights, the Lantern Gallery actually hung with lanterns; a per-floor atrium palette and an emblem on the stair tower.
+10. **Background removal for artifact photos** — turn near-uniform photo backgrounds transparent at fetch time for true cut-outs (needs an image library such as `sharp` as a dev dependency).
+11. **Sound design** — footsteps, and a different acoustic per space (close in hallways, airy in the atrium, ringing in the stair tower); positional audio near the tower (§6.6).
+12. **Viewer next / previous** — page through a room's or hallway's exhibits without closing the viewer (§7.1 "optional").
+13. **A mirror at each hallway bend** — Borges puts a mirror in the passage between hexagons. It must only ever reflect hallway geometry, or it would give away the frame hand-over (§2.7).
+14. **Librarians** — faint figures glimpsed at the far end of a corridor or climbing the stair, gone by the time you get close.
+15. **The endless stair** — past the top floor, steps that keep rising into darkness, with no way through (a nod to the parked "endless tower", §2.6).
+16. **A "Book of Sand" lectern** in each atrium that opens a random page of a random book from the library.
 
 ---
 
@@ -432,7 +530,8 @@ Phases 0–6 are complete (v1 is feature- and content-complete). Nothing below i
 
 **New questions surfaced by the tower model (for a later session, not blocking):**
 
-- **Q13 — Staircase fidelity:** ✅ **Resolved (Phase 3) — stylized transition scene.** Walking onto (or clicking) the central staircase triggers a gentle fade to the connected atrium; no literal climbing, which sidesteps the camera-on-spiral motion-comfort risk (§12). A walkable spiral is parked as a future upgrade.
+- **Q13 — Staircase fidelity:** ✅ **Resolved (Phase 3) — stylized transition scene**, then **revisited (v0.16) — an animated walk up an enclosed spiral stair tower** (§2.6). The climb is scripted (no camera collision on the spiral) with free mouse-look layered on, eased, no head-bob — keeping the motion-comfort risk (§12) in check.
+- **Q16 — Hallways:** ✅ **Resolved (v0.16)** — every doorway opens onto a 25 m Z-shaped corridor, walked with **no fade**; the frame hands over to the far room at the middle of the jog, where neither end is visible (§2.7). Each hallway hangs one natural-history category (36 categories, none repeated; one category per hallway, specimens random per visit), shown as wall plates + display cases (§9.1). Sources: Wikimedia Commons plates + Smithsonian specimens.
 - **Q14 — Floor identity:** ✅ **Addressed (Phase 3) — minimal.** The HUD shows the floor title (e.g., "Ground Floor" / "Upper Gallery") and room name; atrium doorways are signed with the culture beyond and color-cued; the staircase reads "Ascend ↑" / "Descend ↓". A glimpse up/down the shaft could elaborate this later.
 - **Q15 — Tower bounds:** ✅ **Resolved — finite** (ground + N authored floors; staircase terminates top and bottom; no procedural floors for now).
 
@@ -447,11 +546,17 @@ Phases 0–6 are complete (v1 is feature- and content-complete). Nothing below i
 - **Disorientation vs. frustration:** keep at least one reliable anchor (atrium return) so "lost" stays playful.
 - **Translation rights (ctext, Perseus):** the ancient _text_ is PD, but a specific modern _translation_ may not be. Verify per work.
 - **Audio autoplay:** browsers block sound until a user gesture — gate audio start on the "enter" interaction and ship a mute control (§6.6). Also screen audio licenses like everything else.
-- **Vertical traversal:** if the staircase is walkable (Q13), watch camera collision/clipping on the spiral and motion comfort; the transition-scene fallback avoids both.
+- **Vertical traversal:** ✅ addressed (v0.16) — the climb's position is scripted along the helix (nothing to clip into) and only yaw follows the spiral (~80°/s, eased in and out, no head-bob, mouse-look free). If it still proves uncomfortable for some visitors, slow `CLIMB_SPEED` or add a "fade instead" option.
+- **Commons etiquette / rate limits (v0.16):** non-standard thumbnail widths are refused and bursts are throttled (§8.2). A full `fetch:content` is therefore slow (art + 540 texts + ~400 exhibits — expect ~30 min); it saves progress and can resume (`EXHIBITS_ONLY=missing`).
+- **Cache size:** the exhibits add ~1,000 image files to `public/content/` (two sizes each). Fine locally; for a deploy, consider hosting `public/content/` on a CDN/bucket rather than shipping it inside `dist/`.
 
 ---
 
 ## 13. Changelog
+
+- **v0.17 (2026-10-22):** **Spruce-up pass** (§10 "Spruce-up review", items 1–6; items 7–16 added as possible to-dos). **Labels:** printed museum label cards for every painting, shelf artifact, centrepiece and hallway exhibit (title · maker/date · provider + license), drawn on canvas and kept out of the pick-ray. **Spines:** each shelf's book spines are titled (one canvas texture per shelf, gilt bands, vertical titles) over still-clickable book boxes. **Wall text:** an introductory panel beside every doorway, facing its hallway — floor, room name, dates, a short original paragraph for each of the 18 cultures and each atrium (`data/introductions.ts`). **Surfaces:** ten procedural floor styles and six wall styles (`scene/surfaces.ts`), one of each per culture in `data/themes.ts` (e.g. Egypt flagstone + ashlar, Renaissance Italy marble checker + plaster, Edo Japan tatami + shoji, the Islamic Golden Age tile + a zellige dado), with baked corner/floor/ceiling shading, plus real skirting, cornice and door architraves. **Cases:** shelf artifacts and centrepieces now stand on mounted cards in glass cases (shared `props/Vitrine.tsx`, also used in the hallways); the bookcase is now an open shelf over a cupboard; the centrepiece case blocks walking. **Atrium:** three hanging lanterns replace the key light that had ended up inside the stair tower; warmer, lighter stone. Verified: lint, type-checked build, **76/76 tests** (text layout, surface styles per theme, wall text coverage, label content, color shading), and in the browser (Egypt, Edo Japan, the Islamic Golden Age, the atrium, a hallway plate and an intro panel — screenshotted).
+
+- **v0.16 (2026-10-22):** **Walkable hallways with natural-history exhibits + a climbable stair tower** (§2.6, §2.7, §9.1; Q13 revisited, Q16 new). **Hallways:** every doorway (36 in the tower) now opens onto a 25 m, Z-shaped, lamp-lit corridor that's walked end to end with **no fade** — the visitor's frame hands over to the far room at the middle of the jog, where neither doorway is visible (proved by a sight-line unit test), in the same render commit that swaps the scene; the corridor is drawn unlit so it's identical in both rooms' frames, hallways are keyed so the one being walked persists across the hand-over, and movement is clamped to a per-room walkable area (`navigation/walkable.ts`; hallways never overlap in a room's frame — tested). Each hallway hangs **one of 36 natural-history categories** (10 insect orders, other arthropods, plants/fungi/algae, fossils, sea life, minerals/meteorites/eggs/skeletons — authored per floor in `config/hallways.ts`, none repeated) as **6 framed plates + 2 glass display cases**, specimens drawn at random per visit, all clickable into the viewer and listed in Sources. Sources: **Wikimedia Commons** plates (Haeckel, Merian, Besler, Atkins, Mohs, BHL scans — license-gated, attributed) and **Smithsonian Open Access** CC0 specimen photos (NMNH education + botany units; needs a free api.data.gov key in `.env.local`, Commons fallback without one) via the new `scripts/fetch-exhibits.ts` — two image sizes each, saved per category, resumable (`EXHIBITS_ONLY=missing`). The fetcher also adapted to current Wikimedia rules (standard thumbnail widths only, throttled downloads, `utm` query stripping) — which also fixes the room-art Commons supplement (it requested a now-refused 900 px width). **Stairs:** the atrium's open spiral became an **enclosed stair tower** with one continuous helix through all floors (1.5 turns, 8 m per floor); stepping into its doorway and turning left/right (or clicking a flight) plays a ~9 s **walked climb** — scripted position, free look, eased, no head-bob — rendering both atria (Euclidean, stacked) with their key lights crossfaded mid-climb, then re-basing a floor in one commit. Doorways face signed hallway doors so you step off facing a way onward. **Also:** audio now blends the two rooms' beds as you walk a hallway (equal-power mix engine); door signs/plaques are canvas-texture planes (walls occlude them); the pick-ray stops at the first solid surface; doorways are walked through (hover still names them; R still fades to the atrium); the HUD names the hallway you're in and hints at the stair directions. Verified: lint, type-checked build, **68/68 tests** (hallway geometry + hand-over invariants, walkable area, stair helix, hallway derivation/36 unique categories, exhibit arrangement, provider exhibits, credits/texture budget), and in the browser: a full atrium → hallway → Meso-America walk (hand-over seamless, HUD + audio state correct) and a ground → Upper Gallery climb (screenshotted).
 
 - **v0.15 (2026-06-19):** **Third floor — "The Lantern Gallery"** (backlog §10 "more floors / themed sets"; §2.6). Appended `floor-3` (level 2) to `FLOORS` with six new cultures — **Plains Nations (Lakota)**, **Ancient India (Indus–Maurya)**, **Viking Age Scandinavia**, **The Islamic Golden Age**, **Polynesia**, **19th-Century America** — taking the tower to **18 cultures / 3 floors**, all derived (atrium + ring + staircase edges) with no hand-authored adjacency. Each new culture got the full per-culture authoring the existing 12 have: a `CultureId`, a `RoomTheme` (palette/lights/materials, `data/themes.ts`), a display title (`model/labels.ts`), a distinct procedural `AudioProfile` (drone + its own chord progression, `audio/profiles.ts` — e.g. a tanpura-like drone for India, maqam-Hijaz color for the Islamic Golden Age, bare modal fifths for the Vikings, a choral major sway for Polynesia), and Met sourcing config (`scripts/fetch-content.ts`): department-scoped where the Met is strong (14 Islamic Art, 1 American Wing, 6 Asian Art, 5 Arts of the Americas/Oceania) and **Wikimedia Commons** category backups for the thin rooms (Plains, Viking, Polynesia, India; §8.2). The shared book pool grew **360 → 540** (`BOOK_TARGET` + scaled genre buckets) so all **54 shelves** fill uniquely (no repeats). Verified: format, lint, **36/36 tests** (audio-profile allowlist + provider book-pool sizing updated for 54 shelves), type-checked build (the six `Record<CultureId,…>` maps force completeness); full content re-fetch repopulates the cache (**216 artworks = 18×12, 540 texts**). The tower remains finite (Q15): the new floor is now the top (down-only staircase); the previous top (floor 2) gains an up-staircase automatically via derivation. **Content QA:** the first fetch surfaced off-theme hits (a NASA "Viking" Mars-lander photo from Commons; Andean objects in the Plains room from the ambiguous query "Plains"), so Met queries were department-scoped + tuned per §9 (Vikings → Medieval dept 17; Plains → tribe names) and the Plains room — whose Met pool is almost entirely one Cheyenne ledger album — was set to blend a capped Met share with curated Commons Lakota pieces (pictographic dresses, parfleche, a Hunkpapa shield). All Commons art carries CC0/PD/CC-BY(-SA) + attribution (§8.4).
 - **v0.14 (2026-06-19):** **Visual polish + content depth** (post-v1 backlog §10). Four items: **(1) Textured billboards (§6.3)** — the shelf artifacts and central centerpieces, previously solid-colored sprites, now show their real cached images via a shared `BillboardArtwork` wrapper (`scene/ArtImage.tsx`: `ArtImage` in a `Billboard`+`Suspense`, solid fallback while loading / when uncached). **(2) Texture-budget pass (§12)** — `scene/ArtImage` registers each loaded texture and `App` disposes every texture not on the current floor when `floorLevel` changes (`scene/textureBudget.ts` + pure `floorArtUrls` in `model/assets.ts`), bounding live texture memory to a single floor; safe because floors only meet at the art-less atria, so nothing on screen references what's dropped. **(3) Featured/legible book weighting (§8.5)** — the fetcher records each text's Gutenberg download count (`BookRef.popularity`); the runtime dealer (`content/provider.ts`) splits the pool into a featured tier (top 30%) and the long tail and gives every shelf ~3 featured + the rest from the tail, so shelves aren't all obscure — still placing each text exactly once (no repeats). **(4) Wikimedia Commons art source (§8.2)** — `scripts/fetch-content.ts` now tops up the Met-thin cultures from curated Commons categories: cultures without a clean Met department (Pacific Northwest, Mali & Songhai) cap their noisy whole-collection Met share (≤ ⌈N/2⌉) and fill the rest from on-theme Commons results (license-gated to CC0/PD/CC-BY/CC-BY-SA, with attribution + source link); per-culture art target deepened 8 → 12 for real per-visit variety (§9). Verified: format, lint, **36/36 tests** (added `floorArtUrls` + featured-weighting invariants), type-checked build; Commons path validated live (on-theme Haida/Coast Salish records with correct license normalization). Backlog (§10) updated.

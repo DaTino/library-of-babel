@@ -1,7 +1,8 @@
 # Running the Library of Babel locally
 
 A first-person 3D virtual museum (Vite + React + react-three-fiber). Everything runs
-client-side — **no backend, no API keys, no database** needed.
+client-side — **no backend, no database**, and the app itself needs **no API keys**. (One
+optional, free key lets the content fetcher pull Smithsonian specimen photos — see below.)
 
 ## Prerequisites
 
@@ -38,25 +39,52 @@ The server hot-reloads as you edit files. Stop it with **Ctrl+C**.
 ## Load real content (optional)
 
 The app ships with styled placeholders. To populate **real open-licensed art (The Met +
-Wikimedia Commons) and full texts (Project Gutenberg)**:
+Wikimedia Commons), full texts (Project Gutenberg), and the hallway exhibits (Wikimedia
+Commons plates + Smithsonian specimens)**:
+
+### Optional: a Smithsonian key (for the display-case specimens)
+
+The hallway display cases show CC0 photographs of real specimens from the Smithsonian's
+National Museum of Natural History. Its API needs a free key:
+
+1. Sign up at **<https://api.data.gov/signup/>** (name + email). The key arrives by email
+   right away.
+2. Copy `.env.example` to **`.env.local`** in the project root (it's git-ignored) and paste
+   the key after `SMITHSONIAN_API_KEY=`.
+
+Without a key everything still works; the cases just show Wikimedia Commons photos instead.
+
+### Fetch
 
 ```bash
 npm run fetch:content
 ```
 
-This caches art for 18 cultures + 540 texts under `public/content/` (git-ignored), so it
-takes several minutes; reload the page when it finishes. If the Met API throttles one
-culture's art, re-fetch just that culture with `ART_ONLY=rome,edo_japan npm run fetch:content`.
+This caches art for 18 cultures, 540 texts, and the exhibits for all 36 hallways under
+`public/content/` (git-ignored). Wikimedia throttles downloads, so the whole run takes a while
+(~30 min); reload the page when it finishes. Partial refreshes, which merge into what's there:
 
-## 3. Explore the room
+- `ART_ONLY=rome,edo_japan npm run fetch:content` — re-fetch art for some cultures
+- `EXHIBITS_ONLY=1 npm run fetch:content` — re-fetch all hallway exhibits (e.g. after adding
+  the Smithsonian key)
+- `EXHIBITS_ONLY=missing npm run fetch:content` — resume an interrupted exhibits fetch
+- `EXHIBITS_ONLY=coleoptera,odonata npm run fetch:content` — just some categories
+
+(On Windows PowerShell set the variable first: `$env:EXHIBITS_ONLY="1"; npm run fetch:content`.)
+
+## 3. Explore
 
 - **Click** anywhere to enter (this locks the mouse pointer to the window).
-- **W A S D** or **arrow keys** to walk.
-- **Move the mouse** to look around.
-- Put the center reticle on an item (painting, book, artifact, or a doorway) — it
-  highlights and shows a label. **Click** to open the art viewer or reader.
-- **Esc** releases the mouse.
-- Ambient audio fades in when you enter; toggle it with the **🔊** button or **M**.
+- **W A S D** or **arrow keys** to walk; **move the mouse** to look around.
+- Walk through a **doorway** and down its **hallway** to reach the next room — each hallway is
+  hung with natural-history exhibits, and the next room appears as you round its bend.
+- In an atrium, step into the **stair tower's doorway** and turn **left to ascend** or **right
+  to descend** (or click a flight) to climb to another floor.
+- Put the center reticle on an item (painting, book, artifact, or exhibit) — it highlights and
+  shows a label. **Click** to open the art viewer or reader.
+- **R** returns to the floor's atrium; **Esc** releases the mouse.
+- Ambient audio fades in when you enter and blends between rooms as you walk; toggle it with
+  the **🔊** button or **M**.
 
 ## All commands
 

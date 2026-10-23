@@ -3,23 +3,34 @@ import { DEFAULT_PROGRESSION, semitoneRatio, type AudioProfile } from "./profile
 interface Bed {
   gain: GainNode;
   stop: () => void;
+  /** Pending teardown once faded out (cleared if the bed is wanted again). */
+  stopTimer: number | null;
 }
 
-const CROSSFADE = 1.2; // seconds — a touch longer than the visual fade (§2.4)
+/** One bed in the mix: which profile, and how loud relative to its own level. */
+export interface MixEntry {
+  key: string;
+  profile: AudioProfile;
+  weight: number;
+}
+
 const BED_LEVEL = 0.6; // global scalar on every bed's gain — keeps the ambience quiet
 const CHORD_DUR = 12; // seconds each chord in the progression is held
 const CHORD_GLIDE = 3.5; // seconds to glide between chords (portamento, stays ambient)
 
 /**
  * Procedural ambient audio (§6.6). One generated "bed" per room (drone chord +
- * slow filter LFO + airy noise), crossfaded on room change. The AudioContext is
- * created on the first user gesture (autoplay policy). A single master gain
+ * slow filter LFO + airy noise). The engine plays a weighted *mix* of beds:
+ * normally just the current room's, but while walking a hallway (§2.7) the two
+ * rooms it joins blend by how far along it you are. Beds are built on demand,
+ * faded with a short time constant, and torn down once silent. The AudioContext
+ * is created on the first user gesture (autoplay policy). A single master gain
  * handles muting.
  */
 class AudioEngine {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
-  private current: Bed | null = null;
+  private beds = new Map<string, Bed>();
   private muted = false;
   private started = false;
 
@@ -50,23 +61,47 @@ class AudioEngine {
     this.master.gain.linearRampToValueAtTime(muted ? 0 : 1, t + 0.3);
   }
 
-  /** Crossfade to a new room's ambient bed. */
-  setRoom(profile: AudioProfile): void {
+  /**
+   * Fade toward a weighted mix of beds. `smoothing` is the fade's time constant
+   * in seconds (≈3× that to settle): short while walking a hallway, so the blend
+   * tracks your steps; longer for a jump (R → atrium), a gentle crossfade.
+   */
+  setMix(entries: MixEntry[], smoothing = 0.15): void {
     if (!this.ctx || !this.master) return;
     const t = this.ctx.currentTime;
+    const wanted = new Map(entries.filter((e) => e.weight > 0.001).map((e) => [e.key, e]));
 
-    const next = this.buildBed(profile);
-    next.gain.gain.setValueAtTime(0, t);
-    next.gain.gain.linearRampToValueAtTime(profile.gain * BED_LEVEL, t + CROSSFADE);
-
-    const prev = this.current;
-    if (prev) {
-      prev.gain.gain.cancelScheduledValues(t);
-      prev.gain.gain.setValueAtTime(prev.gain.gain.value, t);
-      prev.gain.gain.linearRampToValueAtTime(0, t + CROSSFADE);
-      window.setTimeout(prev.stop, (CROSSFADE + 0.2) * 1000);
+    for (const [key, e] of wanted) {
+      let bed = this.beds.get(key);
+      if (!bed) {
+        bed = this.buildBed(e.profile);
+        this.beds.set(key, bed);
+      }
+      if (bed.stopTimer !== null) {
+        window.clearTimeout(bed.stopTimer);
+        bed.stopTimer = null;
+      }
+      this.fadeTo(bed, e.profile.gain * BED_LEVEL * e.weight, t, smoothing);
     }
-    this.current = next;
+
+    for (const [key, bed] of this.beds) {
+      if (wanted.has(key) || bed.stopTimer !== null) continue;
+      this.fadeTo(bed, 0, t, smoothing);
+      bed.stopTimer = window.setTimeout(
+        () => {
+          bed.stop();
+          this.beds.delete(key);
+        },
+        smoothing * 8 * 1000 + 200,
+      );
+    }
+  }
+
+  private fadeTo(bed: Bed, target: number, t: number, smoothing: number): void {
+    const g = bed.gain.gain;
+    g.cancelScheduledValues(t);
+    g.setValueAtTime(g.value, t);
+    g.setTargetAtTime(target, t, smoothing);
   }
 
   private buildBed(profile: AudioProfile): Bed {
@@ -151,7 +186,7 @@ class AudioEngine {
       bedGain.disconnect();
     };
 
-    return { gain: bedGain, stop };
+    return { gain: bedGain, stop, stopTimer: null };
   }
 }
 

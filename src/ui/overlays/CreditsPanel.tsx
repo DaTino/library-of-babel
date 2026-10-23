@@ -1,9 +1,18 @@
-import type { Room } from "../../model/types";
-import { collectRoomAssets } from "../../model/assets";
+import type { Hallway, Room } from "../../model/types";
+import { collectRoomAssets, roomHallways } from "../../model/assets";
 
-/** Global "Sources & Licenses" view — a compliance requirement (§7.3 / §8.4). */
-export function CreditsPanel({ room, onClose }: { room: Room; onClose: () => void }) {
-  const assets = collectRoomAssets(room);
+/** Global "Sources & Licenses" view — a compliance requirement (§7.3 / §8.4).
+ *  Covers the room and the exhibits in the hallways off its doorways (§9.1). */
+export function CreditsPanel({
+  room,
+  hallways,
+  onClose,
+}: {
+  room: Room;
+  hallways: Map<string, Hallway>;
+  onClose: () => void;
+}) {
+  const assets = collectRoomAssets(room, roomHallways(room, hallways));
 
   return (
     <div className="overlay overlay--credits">
@@ -15,7 +24,8 @@ export function CreditsPanel({ room, onClose }: { room: Room; onClose: () => voi
           </button>
         </div>
         <p className="credits__intro">
-          Every asset currently loaded in <b>{room.title}</b>, with provider and license.
+          Every asset currently loaded in <b>{room.title}</b> and the hallways off it, with provider
+          and license.
         </p>
         <ul className="credits__list">
           {assets.map((a) => (

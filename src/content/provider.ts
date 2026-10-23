@@ -3,6 +3,7 @@ import type { Artwork, BookRef, CultureId } from "../model/types";
 import { FLOORS } from "../config/layout";
 import { ATRIUM_THEME, CULTURE_THEMES } from "../data/themes";
 import { LOREM_BOOKS, placeholderArtwork } from "../data/placeholder";
+import { CASES_PER_HALLWAY, PLATES_PER_HALLWAY, arrangeExhibits } from "../data/exhibits";
 import { sample } from "./seededRandom";
 import type { CachedManifest } from "./types";
 
@@ -34,6 +35,23 @@ export function createCachedProvider(manifest: CachedManifest): ContentProvider 
         shelf: shelfBooks.get(`${floor.id}:${culture}:${k}`) ?? [],
       }));
       return { artWalls, centerpiece: art[ART_PER_ROOM - 1] };
+    },
+    // Each hallway hangs its own category (no repeats across the tower); which
+    // plates/specimens from that category's pool appear varies per visit (§9.1).
+    exhibitsFor: (_floor, hallwayId, category) => {
+      const pool = manifest.exhibitsByCategory?.[category];
+      const plates = pool?.plates ?? [];
+      const specimens = pool?.specimens ?? [];
+      // Distinct draws (no cycling), with a little extra of each type so a short
+      // pool can lend to the other.
+      const draw = <T>(items: T[], tag: string, n: number) =>
+        sample(items, `${hallwayId}:${tag}:${SESSION_SALT}`, Math.min(n, items.length));
+      return arrangeExhibits(
+        hallwayId,
+        category,
+        draw(plates, "plates", PLATES_PER_HALLWAY + 2),
+        draw(specimens, "specimens", CASES_PER_HALLWAY + 2),
+      );
     },
   };
 }

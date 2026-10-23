@@ -7,7 +7,7 @@ import { Overlays } from "./ui/Overlays";
 import { Transition } from "./ui/Transition";
 import { useAudio } from "./audio/useAudio";
 import { placeholderContent } from "./data/placeholder";
-import { deriveMuseum, roomsById } from "./model/deriveMuseum";
+import { deriveMuseum, hallwaysById, roomsById } from "./model/deriveMuseum";
 import { floorArtUrls } from "./model/assets";
 import { releaseTexturesExcept } from "./scene/textureBudget";
 import { FLOORS } from "./config/layout";
@@ -23,11 +23,16 @@ export default function App() {
   // Start with placeholder content; swap in the build-time cache when present (§8).
   const [museum, setMuseum] = useState<Museum>(() => deriveMuseum(FLOORS, placeholderContent));
   const rooms = useMemo(() => roomsById(museum), [museum]);
+  const hallways = useMemo(() => hallwaysById(museum), [museum]);
+  const topLevel = useMemo(() => Math.max(...museum.floors.map((f) => f.level)), [museum]);
+  const floorTitles = useMemo(
+    () => new Map(museum.floors.map((f) => [f.level, f.title ?? `Floor ${f.level + 1}`])),
+    [museum],
+  );
   const room = rooms.get(currentRoomId) ?? rooms.get("floor-1:atrium")!;
-  const floorTitle =
-    museum.floors.find((f) => f.level === room.floorLevel)?.title ?? `Floor ${room.floorLevel}`;
+  const floorTitle = floorTitles.get(room.floorLevel) ?? `Floor ${room.floorLevel}`;
 
-  useAudio(room);
+  useAudio(room, rooms);
 
   useEffect(() => {
     let cancelled = false;
@@ -46,8 +51,9 @@ export default function App() {
   }, [setLocked]);
 
   // Texture-budget pass (§12): when the visitor changes floors (or content swaps
-  // in), drop every cached texture that isn't on the current floor. Safe because
-  // floors only meet at the art-less atria, so nothing on screen is dropped.
+  // in), drop every cached texture that isn't on the current floor — its rooms
+  // and its hallways. Safe because floors only meet inside the stair tower, and
+  // the floor we leave is unmounted in the same commit that changes the level.
   useEffect(() => {
     releaseTexturesExcept(floorArtUrls(museum, room.floorLevel));
   }, [museum, room.floorLevel]);
@@ -56,16 +62,23 @@ export default function App() {
     <div className="app">
       <Canvas
         dpr={[1, 2]}
-        camera={{ position: [0, EYE_HEIGHT, 2.2], fov: 70, near: 0.1, far: 100 }}
+        camera={{ position: [0, EYE_HEIGHT, 4.2], fov: 70, near: 0.1, far: 100 }}
       >
         <color attach="background" args={["#07070a"]} />
         <fog attach="fog" args={["#07070a", 10, 30]} />
-        {/* Keyed by room id so each scene fully mounts/disposes on travel (§2.4). */}
-        <Scene key={room.id} room={room} rooms={rooms} />
+        {/* Rooms swap inside the Scene (keyed by room id there); hallways persist
+            across the hand-over so the walk is seamless (§2.7). */}
+        <Scene
+          room={room}
+          rooms={rooms}
+          hallways={hallways}
+          topLevel={topLevel}
+          floorTitles={floorTitles}
+        />
         <ActiveControls />
       </Canvas>
-      <Hud room={room} floorTitle={floorTitle} />
-      <Overlays room={room} />
+      <Hud room={room} rooms={rooms} hallways={hallways} floorTitle={floorTitle} />
+      <Overlays room={room} hallways={hallways} />
       <Transition />
     </div>
   );
