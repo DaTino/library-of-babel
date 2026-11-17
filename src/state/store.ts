@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { Artwork, BookRef } from "../model/types";
 import type { InteractKind } from "../interaction/types";
+import type { NowPlaying } from "../audio/AudioEngine";
 
 /** Which 2D overlay is open over the canvas (§7). Movement locks while open. */
 export type OverlayKind = "none" | "art" | "reader" | "credits";
@@ -65,6 +66,8 @@ interface MuseumState {
   audioEnabled: boolean;
   /** Ambient audio mute toggle (§6.6). */
   muted: boolean;
+  /** The recorded track currently audible, if any (§6.6) — shown in the HUD. */
+  nowPlaying: NowPlaying | null;
   isLocked: boolean;
   hovered: Hovered | null;
   readingPositions: Record<string, number>;
@@ -90,6 +93,7 @@ interface MuseumState {
   closeOverlay: () => void;
   enableAudio: () => void;
   toggleMute: () => void;
+  setNowPlaying: (np: NowPlaying | null) => void;
   setLocked: (v: boolean) => void;
   setHovered: (h: Hovered | null) => void;
   setReadingPosition: (bookId: string, scrollTop: number) => void;
@@ -113,6 +117,7 @@ export const useMuseumStore = create<MuseumState>((set) => ({
   activeBook: null,
   audioEnabled: false,
   muted: false,
+  nowPlaying: null,
   isLocked: false,
   hovered: null,
   readingPositions: {},
@@ -171,6 +176,7 @@ export const useMuseumStore = create<MuseumState>((set) => ({
   closeOverlay: () => set({ overlay: "none" }),
   enableAudio: () => set({ audioEnabled: true }),
   toggleMute: () => set((s) => ({ muted: !s.muted })),
+  setNowPlaying: (nowPlaying) => set({ nowPlaying }),
   setLocked: (v) => set({ isLocked: v }),
   setHovered: (h) => set({ hovered: h }),
   setReadingPosition: (bookId, scrollTop) =>

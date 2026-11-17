@@ -1,4 +1,12 @@
-import type { Artwork, BookRef, CultureId, ExhibitCategoryId } from "../model/types";
+import type { Artwork, BookRef, CultureId, ExhibitCategoryId, MusicTrack } from "../model/types";
+
+/** The downloaded soundtrack (§8.7), written by `scripts/fetch-music.ts` to
+ *  public/content/music.json: the house playlist and one per culture. */
+export interface MusicManifest {
+  generatedAt: string;
+  house: MusicTrack[];
+  cultures: Partial<Record<CultureId, MusicTrack[]>>;
+}
 
 /** One hallway category's candidate pools (§9.1): illustrated plates for the
  *  walls, specimen photographs for the display cases. */

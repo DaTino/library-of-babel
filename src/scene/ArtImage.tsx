@@ -1,27 +1,59 @@
-import { Suspense, useEffect } from "react";
+import { Component, Suspense, useEffect, type ReactNode } from "react";
 import { Billboard, useTexture } from "@react-three/drei";
 import { SRGBColorSpace } from "three";
 import type { Artwork } from "../model/types";
 import type { InteractableData } from "../interaction/types";
 import { trackTexture } from "./textureBudget";
 
-/**
- * A textured plane for a cached artwork image (§8). The image is served from our
- * own origin (build-time cache), so the texture is CORS-safe. The plane is
- * aspect-fit within the given box so art isn't stretched. Suspends while
- * loading — wrap in <Suspense> with a colored fallback.
- */
-export function ArtImage({
-  url,
-  width,
-  height,
-  userData,
-}: {
+interface ArtImageProps {
   url: string;
   width: number;
   height: number;
   userData: InteractableData;
-}) {
+}
+
+/** If an image can't load (a missing or broken file), show a plain card in its
+ *  place instead of letting the error take down the scene. */
+class ImageFailsafe extends Component<
+  { fallback: ReactNode; children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch(error: unknown) {
+    console.warn("[art] image failed to load:", error);
+  }
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
+/**
+ * A textured plane for a cached artwork image (§8). The image is served from our
+ * own origin (build-time cache or the owner's curation, §8.6), so the texture is
+ * CORS-safe. The plane is aspect-fit within the given box so art isn't
+ * stretched. Suspends while loading — wrap in <Suspense> with a colored
+ * fallback. A file that fails to load shows as a plain card.
+ */
+export function ArtImage(props: ArtImageProps) {
+  return (
+    <ImageFailsafe
+      key={props.url}
+      fallback={
+        <mesh userData={props.userData}>
+          <planeGeometry args={[props.width, props.height]} />
+          <meshBasicMaterial color="#3a352d" />
+        </mesh>
+      }
+    >
+      <LoadedImage {...props} />
+    </ImageFailsafe>
+  );
+}
+
+function LoadedImage({ url, width, height, userData }: ArtImageProps) {
   const texture = useTexture(url);
   texture.colorSpace = SRGBColorSpace;
 

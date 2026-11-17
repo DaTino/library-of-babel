@@ -1,6 +1,20 @@
 import type { ContentProvider } from "../model/deriveMuseum";
 import { createCachedProvider } from "./provider";
-import type { CachedManifest } from "./types";
+import type { CachedManifest, MusicManifest } from "./types";
+
+/** The downloaded soundtrack (`public/content/music.json`, §8.7), if fetched. */
+export async function loadSoundtrack(): Promise<MusicManifest | null> {
+  try {
+    const res = await fetch(`${import.meta.env.BASE_URL}content/music.json`, {
+      cache: "no-cache",
+    });
+    if (!res.ok) return null;
+    const m = (await res.json()) as MusicManifest;
+    return m && Array.isArray(m.house) ? m : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Try to load the build-time cache (§8). Returns a cached content provider when

@@ -220,6 +220,34 @@ body {
   border-color: var(--accent);
 }
 
+/* ---- Now playing (§6.6) — a quiet caption under the buttons ---- */
+.now-playing {
+  position: absolute;
+  top: 4.4rem;
+  right: 1.5rem;
+  z-index: 20;
+  max-width: min(24rem, calc(100vw - 3rem));
+  margin: 0;
+  font-family: ui-serif, Georgia, serif;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  text-align: right;
+  color: var(--muted);
+  pointer-events: none;
+  animation: now-playing-in 1.2s ease-out both;
+}
+
+.now-playing__by {
+  opacity: 0.75;
+}
+
+@keyframes now-playing-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.2rem);
+  }
+}
+
 /* ---- Overlay shell ---- */
 .overlay-root {
   position: fixed;
@@ -550,6 +578,15 @@ body {
   border: 1px solid rgba(194, 162, 90, 0.4);
   border-radius: 0.25rem;
   padding: 0.05rem 0.4rem;
+}
+
+.credits__group {
+  padding: 0.9rem 0 0.3rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
 }
 
 .credits__audio {

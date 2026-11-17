@@ -38,9 +38,10 @@ The server hot-reloads as you edit files. Stop it with **Ctrl+C**.
 
 ## Load real content (optional)
 
-The app ships with styled placeholders. To populate **real open-licensed art (The Met +
-Wikimedia Commons), full texts (Project Gutenberg), and the hallway exhibits (Wikimedia
-Commons plates + Smithsonian specimens)**:
+The app ships with styled placeholders and generated drone audio. To populate **real
+open-licensed art (The Met + Wikimedia Commons), full texts (Project Gutenberg), the hallway
+exhibits (Wikimedia Commons plates + Smithsonian specimens), and the soundtrack (openly licensed
+recordings from Wikimedia Commons)**:
 
 ### Optional: a Smithsonian key (for the display-case specimens)
 
@@ -60,10 +61,13 @@ Without a key everything still works; the cases just show Wikimedia Commons phot
 npm run fetch:content
 ```
 
-This caches art for 18 cultures, 540 texts, and the exhibits for all 36 hallways under
-`public/content/` (git-ignored). Wikimedia throttles downloads, so the whole run takes a while
-(~30 min); reload the page when it finishes. Partial refreshes, which merge into what's there:
+This caches art for 18 cultures, 540 texts, the exhibits for all 36 hallways, and 65 music
+tracks (~250 MB) under `public/content/` (git-ignored). Wikimedia throttles downloads, so the whole
+run takes a while (~30 min); reload the page when it finishes. Partial refreshes, which merge into
+what's there:
 
+- `npm run fetch:music` — just the soundtrack (a few minutes; re-running only fetches what's
+  missing). The picks are in `src/data/soundtrack.ts` — edit a playlist there and re-run.
 - `ART_ONLY=rome,edo_japan npm run fetch:content` — re-fetch art for some cultures
 - `EXHIBITS_ONLY=1 npm run fetch:content` — re-fetch all hallway exhibits (e.g. after adding
   the Smithsonian key)
@@ -71,6 +75,27 @@ This caches art for 18 cultures, 540 texts, and the exhibits for all 36 hallways
 - `EXHIBITS_ONLY=coleoptera,odonata npm run fetch:content` — just some categories
 
 (On Windows PowerShell set the variable first: `$env:EXHIBITS_ONLY="1"; npm run fetch:content`.)
+
+## Curate your own exhibits and music (optional)
+
+```bash
+npm run admin
+```
+
+This starts the dev server and opens the **curation admin** (<http://localhost:5173/admin>).
+Pick a room or hallway on the left to see its exhibit spots:
+
+- **Pin an image** — _Choose an image…_, fill in its title, license and source (all required;
+  they appear on the object's label and in the Sources panel), then _Pin this image_. It replaces
+  the random downloaded pick in that spot on every visit. _Remove_ puts the spot back to the
+  download.
+- **Room music** — every room (and each atrium) has a music card listing what it plays by default
+  (its downloaded playlist, or the house music), with players. Choose an audio file, credit it,
+  and set its volume to play your own track there instead.
+
+Changes show up straight away in any open museum tab. Files are saved under
+`public/curation/` — **commit them** to keep them (they deploy with the site). The admin only works
+on the dev server; it isn't part of the production build.
 
 ## 3. Explore
 
@@ -83,19 +108,22 @@ This caches art for 18 cultures, 540 texts, and the exhibits for all 36 hallways
 - Put the center reticle on an item (painting, book, artifact, or exhibit) — it highlights and
   shows a label. **Click** to open the art viewer or reader.
 - **R** returns to the floor's atrium; **Esc** releases the mouse.
-- Ambient audio fades in when you enter and blends between rooms as you walk; toggle it with
+- Music fades in when you enter — Bach in the atria and hallways, each room's own music inside
+  it — and blends as you walk; the line under the buttons names what's playing. Toggle it with
   the **🔊** button or **M**.
 
 ## All commands
 
-| command           | what it does                                   |
-| ----------------- | ---------------------------------------------- |
-| `npm run dev`     | start the dev server (hot reload)              |
-| `npm run build`   | type-check + production build → `dist/`        |
-| `npm run preview` | serve the production build at `localhost:4173` |
-| `npm test`        | run the unit tests (Vitest)                    |
-| `npm run lint`    | run ESLint                                     |
-| `npm run format`  | format the code with Prettier                  |
+| command                 | what it does                                   |
+| ----------------------- | ---------------------------------------------- |
+| `npm run dev`           | start the dev server (hot reload)              |
+| `npm run build`         | type-check + production build → `dist/`        |
+| `npm run preview`       | serve the production build at `localhost:4173` |
+| `npm test`              | run the unit tests (Vitest)                    |
+| `npm run fetch:content` | download art, texts, exhibits + music          |
+| `npm run fetch:music`   | download just the soundtrack                   |
+| `npm run lint`          | run ESLint                                     |
+| `npm run format`        | format the code with Prettier                  |
 
 ## Production build
 

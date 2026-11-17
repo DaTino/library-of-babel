@@ -26,6 +26,7 @@ export function Hud({
   const toggleMute = useMuseumStore((s) => s.toggleMute);
   const muted = useMuseumStore((s) => s.muted);
   const audioEnabled = useMuseumStore((s) => s.audioEnabled);
+  const nowPlaying = useMuseumStore((s) => s.nowPlaying);
   const hallwayId = useMuseumStore((s) => s.hallway?.id ?? null);
   const climb = useMuseumStore((s) => s.climb);
   const stairPrompt = useMuseumStore((s) => s.stairPrompt);
@@ -85,6 +86,18 @@ export function Hud({
       <button className="sources-btn" onClick={openCredits}>
         Sources
       </button>
+      {audioEnabled && !muted && nowPlaying && (
+        // Keyed by track so each new piece fades in (§6.6); full credit is in Sources.
+        <p
+          key={`${nowPlaying.title}|${nowPlaying.creator ?? ""}`}
+          className="now-playing"
+          aria-live="polite"
+        >
+          <span aria-hidden="true">♪ </span>
+          {nowPlaying.title}
+          {nowPlaying.creator && <span className="now-playing__by"> · {nowPlaying.creator}</span>}
+        </p>
+      )}
 
       {isLocked && !overlayOpen && (
         <div className="reticle" aria-hidden="true">

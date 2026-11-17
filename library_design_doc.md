@@ -2,8 +2,8 @@
 
 ### Design Document (living — update as decisions are made)
 
-**Status:** Draft v0.17
-**Last updated:** 2026-10-22
+**Status:** Draft v0.19
+**Last updated:** 2026-10-24
 **Owner:** (you)
 **Build agent:** Claude Code
 
@@ -238,8 +238,20 @@ interface RoomTheme {
   keyLight: { color: string; intensity: number };
   ambientLight: { color: string; intensity: number };
   materials: Record<string, string>;
-  ambientAudioUrl?: string; // per-culture soundscape (§6.6); atrium = neutral bed
+  music?: MusicTrack[]; // the room's own playlist (§6.6, §8.7); absent → house music
 }
+
+interface MusicTrack {
+  // v0.19 — a recorded piece (downloaded soundtrack §8.7, or curated §8.6)
+  id: string;
+  url: string; // same-origin audio, streamed
+  title: string;
+  creator?: string;
+  date?: string;
+  volume: number; // 0–1
+  source: SourceRef; // credited in Sources (§8.4)
+}
+// Museum also carries houseMusic?: MusicTrack[] — hallways, atria, the stair (§6.6)
 
 interface ArtWall {
   wallIndex: number; // 0..5
@@ -327,14 +339,22 @@ Raycast from camera/cursor. Hover → highlight + label. Click → open the rele
 
 ### 6.6 Audio — per-culture ambient soundscape (DECIDED, Q9)
 
-Each themed room has its own **ambient soundscape** (`RoomTheme.ambientAudioUrl`); the atrium has a neutral bed. Implementation:
+**Since v0.19 the museum plays recorded music** (§8.7): a "utopian scholastic" **house music** — J. S. Bach played by Kimiko Ishizaka (CC0) — in the atria, on the stair and in the hallways, and in each themed room a short playlist of music from (or about) its culture. The generated beds described below remain as the fallback when no soundtrack has been downloaded. How it plays:
+
+- **Where each sound comes from** (`audio/mix.ts`): a room's own playlist (`RoomTheme.music` — the downloaded soundtrack, or the owner's curated track, §8.6), else the house music (`Museum.houseMusic`), else its generated bed.
+- **The hallway walk** — leaving a room, its music fades into the house music by the bend of the hallway, and the bend hands over to the room ahead: _room → Bach → room_, equal-power throughout and symmetric in the walk, so the frame swap at the bend (§2.7) is inaudible. Two places that both play the house music (an atrium and a room without its own) stay on it unbroken; entries for the same voice combine by power so there's no bump. Without house music, the two rooms crossfade directly, as before. A jump (R → atrium) crossfades gently.
+- **Streaming playlists** (`AudioEngine`): each playlist is one `<audio>` element feeding a `MediaElementAudioSourceNode` → per-track gain → mix gain, so a ten-minute piece never sits decoded in memory. Tracks play in order and loop; a track that fails to load is skipped. A playlist that fades out is **paused, not discarded** — walk back into a room and its music resumes where you left it (the six most recent are kept). Muting pauses the streams too.
+- **Levels:** music sits at `TRACK_LEVEL` (0.55) × each track's own volume (soundtrack defaults 0.6; quieter for loud 78s and field recordings), through a gentle `DynamicsCompressor` since recordings from 1904 to 2026 vary a lot in level.
+- **Now playing:** the HUD shows a quiet caption under the buttons — "♪ title · performer" — for the loudest audible track; every track is credited in Sources (§7.3).
+
+The original (v0.10–v0.18) design, still the fallback:
 
 - Web Audio API. **Crossfade** between soundscapes on room/floor transition. **Since v0.16** the engine plays a weighted _mix_ of beds: walking a hallway (§2.7) blends the two rooms it joins by how far along you are (equal-power), so the music hands over step by step; a jump (R → atrium) crossfades gently. Beds are built on demand and torn down once silent.
 - Loop seamlessly; keep volume low and non-fatiguing (it's a backdrop, not a score).
 - **Autoplay caveat:** browsers block audio until a user gesture — start the audio context on first click/keypress (e.g., the "enter the museum" action) and show a mute/volume control.
 - Source the audio under the same open-license discipline as everything else (§8.4): CC0/CC-BY ambient/field-recording libraries (e.g., Freesound under CC filters, or commissioned/owned loops). Store a `SourceRef` per track.
 - Optional later: positional audio (a fountain near the atrium, murmurs near shelves). Not v1.
-- **Implemented (Phase 5):** beds are **generated procedurally** (a Web Audio drone-chord + slow filter LFO + airy noise), one per culture plus a neutral atrium bed — owned/CC0, so nothing to source or license. Each bed slowly drifts through its **own simple chord progression** (per-culture semitone offsets from the root in `AudioProfile.progression`, with a shared `DEFAULT_PROGRESSION` fallback) — one chord roughly every 12 s with gentle glides, transposing the whole drone so the room keeps its voicing/timbre while the harmony breathes instead of sitting on one chord. Levels are kept low via a global `BED_LEVEL` scalar so it stays a backdrop. Crossfade on travel, autoplay-gated on the enter gesture, mute via the 🔊 toggle / **M**. `RoomTheme.ambientAudioUrl` stays as the seam to swap in sourced field-recordings later without touching the engine.
+- **Implemented (Phase 5):** beds are **generated procedurally** (a Web Audio drone-chord + slow filter LFO + airy noise), one per culture plus a neutral atrium bed — owned/CC0, so nothing to source or license. Each bed slowly drifts through its **own simple chord progression** (per-culture semitone offsets from the root in `AudioProfile.progression`, with a shared `DEFAULT_PROGRESSION` fallback) — one chord roughly every 12 s with gentle glides, transposing the whole drone so the room keeps its voicing/timbre while the harmony breathes instead of sitting on one chord. Levels are kept low via a global `BED_LEVEL` scalar so it stays a backdrop. Crossfade on travel, autoplay-gated on the enter gesture, mute via the 🔊 toggle / **M**. (The v0.10 seam for recorded audio, `RoomTheme.ambientAudioUrl`, became `RoomTheme.music` in v0.19.)
 
 ---
 
@@ -414,6 +434,59 @@ Implementation notes:
 - Optional per-shelf seed so a shelf is consistent within a session but differs across rooms/visits.
 - ✅ **Done (v0.14):** a "featured/legible" subset — the top ~30% by Gutenberg download count — is weighted higher so every shelf gets a few recognizable titles, not all obscure (`content/provider.ts`).
 - **Phase 6 (scaled in v0.15):** **10 books per shelf**, dealt out **uniquely** across every shelf so no text repeats within or across rooms (**54 shelves × 10 = 540 texts** across three floors), with **genre variety** — fiction, non-fiction, poetry, drama/plays, and essays — gathered via Gutendex `topic` buckets (`scripts/fetch-content.ts`) and dealt by `content/provider.ts`.
+
+### 8.6 Curation — the owner's own images and music (DECIDED, v0.18)
+
+A **local admin page** lets the owner hand-pick exhibits and music, on top of the downloaded content (§8, §9, §9.1). Books are not curated (§8.5).
+
+**Decisions:**
+
+- **Pinned to a spot.** Every room lists its exhibit spots — 3 paintings, 3 shelf artifacts and the centrepiece in a themed room; 6 plates and 2 display cases in a hallway (the atrium has none). A curated image replaces the random downloaded pick in that one spot, on every visit. Spots left empty keep using the download, as before.
+- **Committed to git.** Curation lives in `public/curation/` — `curation.json` plus `images/` and `music/` — so it's versioned, backed up, and deploys with the site.
+- **Credits required (§8.4).** Every image and track needs a title, a license (CC0, public domain, CC BY, CC BY-SA, or "own work / other" with a rights note) and a source. These feed the object's label and the Sources panel, so the "nothing renders without a SourceRef" rule holds.
+- **Music replaces the room's playlist** (§6.6) — the downloaded soundtrack (§8.7), or the generated bed without one — looped at a set volume. Hallways blend into it as you walk in, curated or not. Atria can have music too (in place of the house music).
+
+**How it works:**
+
+- **The admin** — `npm run admin` opens `/admin.html` on the dev server. A sidebar lists every floor's rooms and hallways, with badges showing what's pinned. Each spot shows where it is in words ("Painting 1 — wall between the doors to … and …"), plus either the pinned image with its credit or the downloaded pool it picks from. Choose an image, fill in the credit, pin. You can also replace, edit details or remove. Rooms get a music card with a player and a volume slider. Images are resized **in the browser** before upload (≤1600 px for the viewer, ≤512 px for the wall, §12), so no image library is needed.
+- **The save API** — `scripts/curation-admin.mjs`, a Vite plugin active only in the dev server, never in a build. It checks every request against the real list of rooms, hallways and spots, generates file names itself (content-hashed), accepts only image/audio types, validates credits, writes `curation.json` atomically, deletes superseded files, and pushes a `curation:update` event so an open museum tab reloads curation live.
+- **The museum** — loads `public/curation/curation.json` (if present) and applies it after the content provider (`applyCuration` in `content/curation.ts`). Invalid entries, or paths outside the curation folder, are ignored and fall back to the download. A curated image that fails to load shows a plain card rather than breaking the scene. Curated music becomes the room's one-track playlist (`RoomTheme.music`, applied after the soundtrack, §8.7), streamed by `AudioEngine` in the same mix as everything else. The admin's music card lists what the room plays without it (its downloaded playlist with players, or the house music).
+- **Shared rules** — `content/curation.ts` holds the ids, spots, validation and apply logic, and is used by the app, the admin page and the plugin alike (tested in `content/curation.test.ts`).
+
+### 8.7 The soundtrack — openly licensed music (DECIDED, v0.19)
+
+The generated drones (§6.6) gave way to **recorded music**: a "utopian scholastic" house voice for the Library itself, and culture-specific music in the rooms. Picks are authored in `data/soundtrack.ts` (Commons file + our own label + volume); `npm run fetch:music` (also the last step of `fetch:content`) looks each file up on **Wikimedia Commons**, **re-checks its license** (CC0 / PD / CC BY / CC BY-SA only, §8.4 — anything else is refused), downloads an MP3 (the original if it is one, else Commons' MP3 transcode — plays in every browser) into `public/content/music/` and writes `public/content/music.json` (both git-ignored, like the art). License, attribution and the source link come from Commons; title/performer/date are ours. Re-runs only fetch what's missing and prune files for removed picks. **65 tracks, about 3½ hours, ~250 MB** — streamed, so a visitor only downloads what they hear.
+
+**House music — J. S. Bach, played by Kimiko Ishizaka (CC0).** The _Open Goldberg Variations_ and _Open Well-Tempered Clavier_ were crowd-funded and dedicated to the public domain: learned, luminous, contrapuntal music — a library's own voice. Aria · Prelude in C · Variation 13 · Prelude in E-flat minor · Prelude in F-sharp · Canon at the Seventh · Preludes in A-flat and A · Aria da capo (~27 min, looped).
+
+**The rooms** (one-line rationale per room in `data/soundtrack.ts`, shown in the admin):
+
+| Room                    | Music                                                                                                        | Licenses           |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------ |
+| Egypt                   | Munira al-Mahdiyya (c. 1914) and Sheikh Sayed El-Safti (1907–25) — early Cairo recordings                    | PD                 |
+| Mesoamerica             | _Field recording:_ oropendolas, a black-faced solitaire and howler monkeys (British Library)                 | CC BY 4.0          |
+| Greece                  | Epitaph of Seikilos (the oldest complete composition); Satie's _Gymnopédies_ on guitar (Michael Laucke)      | CC BY-SA 2.5, PD   |
+| China                   | Guqin — _Evening Song of the Drunken Fisherman_, _Three Refrains on the Yang Pass_ (Charlie Huang)           | CC BY-SA 3.0       |
+| Renaissance Italy       | Palestrina (The Tudor Consort; Missa Papae Marcelli); Respighi's _Ancient Airs and Dances_ (US Marine Band)  | CC BY 3.0, CC0, PD |
+| Tudor England           | Dowland _Flow, my tears_ (soprano & lute); Tallis _If ye love me_, _Lamentations_ (The Tudor Consort)        | CC BY 2.5 / 3.0    |
+| Mesopotamia             | Syriac chant from the Nineveh plain (Hanna Petros, 1931); maqam _mawwal_ from Mosul (al-Musili, 1925)        | PD                 |
+| Pacific Northwest       | _Field recording:_ forest rain, Pacific wren, Swainson's thrush, raven                                       | CC0, CC BY-SA      |
+| Rome                    | Respighi, _Pines of Rome_ — the Janiculum nocturne and the catacomb (US Marine Band)                         | PD                 |
+| Mali & Songhai          | Balafon — Néba Solo and Senufo players (2026); a 1931 recording from French Sudan                            | CC BY 4.0, PD      |
+| Napoleonic France       | Beethoven, _Pathétique_ Adagio (Daniel Veesey); John Field, Nocturne No. 5 (Constantin Stephan)              | CC0, CC BY-SA 4.0  |
+| Edo Japan               | Shakuhachi honkyoku _Shika no Tōne_ (Araki Kodō III); gagaku; nagauta                                        | PD                 |
+| Plains Nations (Lakota) | _Field recording:_ western meadowlarks (Custer State Park, SD), Henslow's sparrow                            | CC BY-SA           |
+| Ancient India           | Veena — raga Kiravani alapana; a Dikshitar kriti (L. Ramakrishnan)                                           | CC0                |
+| Viking Age              | Kulning herding calls (Dalarna, 1954); langeleik tunes (1952) — Swedish Performing Arts Agency               | CC0                |
+| Islamic Golden Age      | Oud samai (Chahadé Saadé); a gazel with Tanburi Cemil Bey; a Hicaz taksim; Persian santur with Saadi's verse | PD                 |
+| Polynesia               | Hawaiian steel guitar, 1915–25 — Liliʻuokalani's _Aloha ʻOe_, Frank Ferera                                   | PD                 |
+| 19th-century America    | _Shenandoah_ (USAF Academy Band); the Shakers' _Simple Gifts_ (fife & drum); Foster's _Hard Times_           | PD, CC BY 3.0      |
+
+**Choices worth knowing:**
+
+- **Field recordings instead of songs** for the Plains (Lakota) and Pacific Northwest rooms: their songs are ceremonial, or belong to the families and nations that hold them — not background music for a game — so these rooms play their landscapes. Mesoamerica too, for a different reason: its music is lost and nothing suitable is openly licensed. Swap in music by those communities' own artists, under licenses they chose, if any turns up (§10).
+- **Historical recordings.** Many rooms use pre-1940 78s and cylinders (crackle and all). Their public-domain status is as Commons records it; a few date from **1925–1937** (Shika no Tōne, the Syriac hymns, the gagaku, the Persian and Ottoman 78s, the 1931 Mali recording), which are public domain in their home countries but may still be protected in the **US** until 2026–2033 under the Music Modernization Act. Fine for this educational/personal project (Q10); re-screen before any public US deployment (§12).
+- **No MIDI renders.** Several Commons uploads turned out to be synthesized from scores (a Francesco da Milano fantasia, a Gottschalk waltz, Joplin piano rolls via MIDI) and were left out; everything here is a real performance or a real place.
 
 ---
 
@@ -522,6 +595,19 @@ A walk-through after v0.16 found the rooms looking less finished than the new ha
 15. **The endless stair** — past the top floor, steps that keep rising into darkness, with no way through (a nod to the parked "endless tower", §2.6).
 16. **A "Book of Sand" lectern** in each atrium that opens a random page of a random book from the library.
 
+**Curation follow-ups (possible, after v0.18, §8.6):**
+
+- **Hide a download** — a "never show this one" button on the pool thumbnails, to drop off-topic downloads (e.g. a chromolithograph puppy that slipped into the beetle plates) without pinning a replacement.
+- **Pin several to a spot** — let a spot rotate through a small curated set per visit, instead of one image.
+- **A hosted admin** — editing on the deployed site would need a backend, storage and a login. Today's admin is local-only by design.
+
+**Soundtrack follow-ups (possible, after v0.19, §8.7):**
+
+- **Curate the house music** — an admin card for the house playlist (today it's set in `data/soundtrack.ts`), and per-room playlists of more than one curated track.
+- **Loudness matching** — measure each track's loudness at fetch time and set its volume automatically, instead of hand-set volumes + a compressor.
+- **Music by the communities themselves** — for the Plains, Pacific Northwest and Mesoamerica rooms, music by Lakota, Northwest Coast and Mesoamerican artists under licenses they chose, if any is offered.
+- **Deeper playlists** — more pieces per room (Egypt, Rome, Napoleonic France and the 19th-century American room are the shortest), or a different house playlist per floor.
+
 ---
 
 ## 11. Open design decisions
@@ -546,13 +632,18 @@ A walk-through after v0.16 found the rooms looking less finished than the new ha
 - **Disorientation vs. frustration:** keep at least one reliable anchor (atrium return) so "lost" stays playful.
 - **Translation rights (ctext, Perseus):** the ancient _text_ is PD, but a specific modern _translation_ may not be. Verify per work.
 - **Audio autoplay:** browsers block sound until a user gesture — gate audio start on the "enter" interaction and ship a mute control (§6.6). Also screen audio licenses like everything else.
+- **Recording copyright (v0.19):** a sound recording has its own copyright, separate from the composition. The soundtrack's historical recordings rely on Commons' public-domain determinations; those from 1925–1937 may still be protected in the US until 2026–2033 (§8.7). Re-screen before a public deployment.
 - **Vertical traversal:** ✅ addressed (v0.16) — the climb's position is scripted along the helix (nothing to clip into) and only yaw follows the spiral (~80°/s, eased in and out, no head-bob, mouse-look free). If it still proves uncomfortable for some visitors, slow `CLIMB_SPEED` or add a "fade instead" option.
 - **Commons etiquette / rate limits (v0.16):** non-standard thumbnail widths are refused and bursts are throttled (§8.2). A full `fetch:content` is therefore slow (art + 540 texts + ~400 exhibits — expect ~30 min); it saves progress and can resume (`EXHIBITS_ONLY=missing`).
-- **Cache size:** the exhibits add ~1,000 image files to `public/content/` (two sizes each). Fine locally; for a deploy, consider hosting `public/content/` on a CDN/bucket rather than shipping it inside `dist/`.
+- **Cache size:** the exhibits add ~1,000 image files to `public/content/` (two sizes each), and the soundtrack ~250 MB of MP3s (v0.19). Fine locally; for a deploy, consider hosting `public/content/` on a CDN/bucket rather than shipping it inside `dist/` (it must stay same-origin or send CORS headers — Web Audio can't read cross-origin audio without them).
 
 ---
 
 ## 13. Changelog
+
+- **v0.19 (2026-11-13):** **A recorded soundtrack replaces the drones** (§6.6, §8.7). The Library now plays **openly licensed music from Wikimedia Commons**. Its "utopian scholastic" **house music** — J. S. Bach by Kimiko Ishizaka (CC0 Goldberg Variations + Well-Tempered Clavier) — plays in the atria, on the stair and in the hallways. Each of the 18 rooms plays a **short playlist from (or about) its culture**: guqin for China, Carnatic veena for India, Palestrina and Tallis for Italy and Tudor England, Respighi's _Pines of Rome_, Hawaiian steel guitar, kulning and langeleik for the Vikings, Ottoman and Persian maqam for the Islamic Golden Age, and so on — **65 tracks, ~3½ hours**. The Plains, Pacific Northwest and Mesoamerica rooms deliberately play **field recordings of their landscapes** rather than living communities' songs (or, for Mesoamerica, music that doesn't survive). New `npm run fetch:music` (`scripts/fetch-music.ts`, also run by `fetch:content`) re-checks every file's license on Commons, downloads MP3s to `public/content/music/` and writes `music.json`; picks and labels live in `data/soundtrack.ts`. **Engine:** playlists stream through `<audio>` elements (no full decode), play in order and loop, pause rather than stop when you leave (so they resume where you left off), go through a gentle compressor, and pause while muted. The hallway walk is now a three-way blend — _room → house music at the bend → the room ahead_ — equal-power and symmetric (`audio/mix.ts`). The generated beds remain the fallback with no soundtrack. **UI:** a "♪ now playing" caption under the HUD buttons; Sources lists the room's tracks and the house music; the admin's music card shows each room's default playlist with players and its rationale. **Model:** `RoomTheme.ambientAudio*` → `RoomTheme.music: MusicTrack[]`, plus `Museum.houseMusic`; curated music (§8.6) becomes a room's one-track playlist. Verified: lint, type-check, **99/99 tests** (the mix — constant power, symmetric hand-over, house music shared without a bump; soundtrack data and `applySoundtrack`; curation over the soundtrack), all 65 downloads license-checked, and in the browser — house music streaming in the atrium (range requests), the hallway blend into Egypt with its track resuming where it left off, a room's guqin with its caption, Sources and the admin card.
+
+- **v0.18 (2026-10-24):** **Curation admin** (§8.6, started on the `curation-admin` branch). A local admin page (`npm run admin` → `/admin.html`) lists every room and hallway with its exhibit spots. The owner can pin their own image to any spot — replacing the random downloaded pick there on every visit, empty spots unchanged — and give any room or atrium its own music, which replaces the generated bed. Every item requires a title, a license and a source (§8.4). Files and `curation.json` are committed under `public/curation/`. The save API is a dev-only Vite plugin (`scripts/curation-admin.mjs`) that validates against the real rooms and spots and names files itself; the museum applies curation on top of the download (`content/curation.ts`) and reloads it live when the admin saves. Also: `ArtImage` now fails safe (a missing image shows a plain card), and labels and Sources show the rights note for own-work items. Verified: lint, type-checked build, **87/87 tests** (targets, credit validation, apply, invalid/escaping paths), and in the browser — pin, edit, live update in an open museum tab, remove, music set/credit/remove, and the API refusing bad requests.
 
 - **v0.17 (2026-10-22):** **Spruce-up pass** (§10 "Spruce-up review", items 1–6; items 7–16 added as possible to-dos). **Labels:** printed museum label cards for every painting, shelf artifact, centrepiece and hallway exhibit (title · maker/date · provider + license), drawn on canvas and kept out of the pick-ray. **Spines:** each shelf's book spines are titled (one canvas texture per shelf, gilt bands, vertical titles) over still-clickable book boxes. **Wall text:** an introductory panel beside every doorway, facing its hallway — floor, room name, dates, a short original paragraph for each of the 18 cultures and each atrium (`data/introductions.ts`). **Surfaces:** ten procedural floor styles and six wall styles (`scene/surfaces.ts`), one of each per culture in `data/themes.ts` (e.g. Egypt flagstone + ashlar, Renaissance Italy marble checker + plaster, Edo Japan tatami + shoji, the Islamic Golden Age tile + a zellige dado), with baked corner/floor/ceiling shading, plus real skirting, cornice and door architraves. **Cases:** shelf artifacts and centrepieces now stand on mounted cards in glass cases (shared `props/Vitrine.tsx`, also used in the hallways); the bookcase is now an open shelf over a cupboard; the centrepiece case blocks walking. **Atrium:** three hanging lanterns replace the key light that had ended up inside the stair tower; warmer, lighter stone. Verified: lint, type-checked build, **76/76 tests** (text layout, surface styles per theme, wall text coverage, label content, color shading), and in the browser (Egypt, Edo Japan, the Islamic Golden Age, the atrium, a hallway plate and an intro panel — screenshotted).
 

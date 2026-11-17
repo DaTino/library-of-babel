@@ -14,12 +14,17 @@
  * fetch-exhibits.ts). The Smithsonian needs a free key in SMITHSONIAN_API_KEY,
  * read from the environment or a git-ignored `.env.local`.
  *
- * Output (git-ignored): public/content/{manifest.json, images/, texts/, exhibits/}
+ * The soundtrack (§6.6, §8.7) — openly licensed recordings from Commons — is
+ * fetched last (see fetch-music.ts), into music.json + music/.
+ *
+ * Output (git-ignored): public/content/{manifest.json, music.json, images/, texts/,
+ * exhibits/, music/}
  *
  * Partial refreshes (merge into the existing manifest, nothing else touched):
  *   ART_ONLY=rome,edo_japan npm run fetch:content
  *   EXHIBITS_ONLY=1 npm run fetch:content            (all 36 categories)
  *   EXHIBITS_ONLY=coleoptera,odonata npm run fetch:content
+ *   npm run fetch:music                               (just the soundtrack)
  */
 import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -39,6 +44,7 @@ import {
   stripHtml,
 } from "./fetch-utils";
 import { fetchExhibitPool } from "./fetch-exhibits";
+import { fetchMusic } from "./fetch-music";
 
 // Local secrets (e.g. SMITHSONIAN_API_KEY) live in a git-ignored .env.local.
 for (const file of [".env.local", ".env"]) {
@@ -490,10 +496,14 @@ async function main() {
   console.log("Fetching hallway exhibits (§9.1)…");
   await fetchExhibits(EXHIBIT_CATEGORY_IDS, manifest);
 
+  console.log("Fetching the soundtrack (§8.7)…");
+  const tracks = await fetchMusic();
+
   const artCount = Object.values(artByCulture).reduce((n, a) => n + a.length, 0);
   console.log(
     `\nDone — ${artCount} artworks, ${books.length} books, ` +
-      `${Object.keys(manifest.exhibitsByCategory).length} exhibit categories → ${MANIFEST}`,
+      `${Object.keys(manifest.exhibitsByCategory).length} exhibit categories, ` +
+      `${tracks} music tracks → ${OUT}`,
   );
 }
 

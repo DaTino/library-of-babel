@@ -6,13 +6,15 @@
   "description": "The Library of Babel — an explorable virtual museum inspired by Borges. See library_design_doc.md for the canonical spec.",
   "scripts": {
     "dev": "vite",
+    "admin": "vite --open /admin.html",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "fetch:content": "tsx scripts/fetch-content.ts"
+    "fetch:content": "tsx scripts/fetch-content.ts",
+    "fetch:music": "tsx scripts/fetch-music.ts"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

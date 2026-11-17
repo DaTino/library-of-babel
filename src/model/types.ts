@@ -105,12 +105,26 @@ export interface BookRef {
   source: SourceRef;
 }
 
+/** One recorded piece of music (§6.6) — from the downloaded soundtrack (§8.7) or
+ *  the owner's curation (§8.6). Credited in Sources like any other asset (§8.4). */
+export interface MusicTrack {
+  id: string;
+  url: string; // same-origin audio file, streamed
+  title: string;
+  creator?: string; // performer(s) / composer
+  date?: string;
+  volume: number; // 0–1 relative to full scale
+  source: SourceRef;
+}
+
 export interface RoomTheme {
   palette: string[];
   keyLight: { color: string; intensity: number };
   ambientLight: { color: string; intensity: number };
   materials: Record<string, string>;
-  ambientAudioUrl?: string; // per-culture soundscape (§6.6); atrium = neutral bed
+  /** The room's own playlist, played in order and looped (§6.6). Absent → the
+   *  museum's house music, or failing that the generated bed. */
+  music?: MusicTrack[];
 }
 
 export interface ArtWall {
@@ -187,4 +201,7 @@ export interface Floor {
 
 export interface Museum {
   floors: Floor[]; // the tower (§2.6)
+  /** "House" music for the hallways, the atria and the stair (§6.6), and for any
+   *  room without its own. Absent → generated beds. */
+  houseMusic?: MusicTrack[];
 }

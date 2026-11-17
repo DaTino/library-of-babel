@@ -1,12 +1,20 @@
 import { useEffect } from "react";
-import type { Hallway, Room } from "../model/types";
+import type { Hallway, MusicTrack, Room } from "../model/types";
 import { useMuseumStore } from "../state/store";
 import { ArtViewer } from "./overlays/ArtViewer";
 import { Reader } from "./overlays/Reader";
 import { CreditsPanel } from "./overlays/CreditsPanel";
 
 /** Renders whichever 2D overlay is open (§7); Esc closes it. */
-export function Overlays({ room, hallways }: { room: Room; hallways: Map<string, Hallway> }) {
+export function Overlays({
+  room,
+  hallways,
+  houseMusic,
+}: {
+  room: Room;
+  hallways: Map<string, Hallway>;
+  houseMusic?: MusicTrack[];
+}) {
   const overlay = useMuseumStore((s) => s.overlay);
   const activeArtwork = useMuseumStore((s) => s.activeArtwork);
   const activeBook = useMuseumStore((s) => s.activeBook);
@@ -30,7 +38,12 @@ export function Overlays({ room, hallways }: { room: Room; hallways: Map<string,
       )}
       {overlay === "reader" && activeBook && <Reader book={activeBook} onClose={closeOverlay} />}
       {overlay === "credits" && (
-        <CreditsPanel room={room} hallways={hallways} onClose={closeOverlay} />
+        <CreditsPanel
+          room={room}
+          hallways={hallways}
+          houseMusic={houseMusic}
+          onClose={closeOverlay}
+        />
       )}
     </div>
   );

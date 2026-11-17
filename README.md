@@ -13,15 +13,17 @@ the source of truth and is updated in place as decisions are made.
 
 ## Scripts
 
-| command                 | what                                                              |
-| ----------------------- | ----------------------------------------------------------------- |
-| `npm run dev`           | start the dev server                                              |
-| `npm run build`         | type-check (`tsc -b`) + production build                          |
-| `npm run preview`       | preview the production build                                      |
-| `npm run lint`          | ESLint                                                            |
-| `npm run format`        | Prettier (write)                                                  |
-| `npm test`              | run unit tests (Vitest)                                           |
-| `npm run fetch:content` | cache real art, texts + hallway exhibits → `public/content/` (§8) |
+| command                 | what                                                                     |
+| ----------------------- | ------------------------------------------------------------------------ |
+| `npm run dev`           | start the dev server                                                     |
+| `npm run admin`         | dev server + the curation admin (`/admin.html`, §8.6)                    |
+| `npm run build`         | type-check (`tsc -b`) + production build                                 |
+| `npm run preview`       | preview the production build                                             |
+| `npm run lint`          | ESLint                                                                   |
+| `npm run format`        | Prettier (write)                                                         |
+| `npm test`              | run unit tests (Vitest)                                                  |
+| `npm run fetch:content` | cache real art, texts, hallway exhibits + music → `public/content/` (§8) |
+| `npm run fetch:music`   | just the soundtrack — openly licensed music from Commons (§8.7)          |
 
 ## Explore
 
@@ -34,11 +36,13 @@ the source of truth and is updated in place as decisions are made.
   descend** (or click a flight) — you'll climb the spiral to the next floor (§2.6)
 - Put the reticle on a **painting / artifact / book / exhibit** and click to open the viewer or reader
 - **R** return to the floor's atrium · **C** Sources & licenses · **M** mute · **Esc** release / close
-- Ambient audio fades in when you enter, and blends from room to room as you walk a hallway
+- Music fades in when you enter: Bach in the atria and hallways, each room's own music inside it,
+  blending as you walk (the HUD names what's playing; Sources credits every track)
 
 > **Real content:** run `npm run fetch:content` once to cache real Met + Wikimedia Commons art
 > (18 cultures), 540 Gutenberg texts, and the hallway exhibits (36 categories of Commons plates +
-> Smithsonian specimens). It takes a while (~30 min); otherwise you'll see styled placeholders.
+> Smithsonian specimens), plus the soundtrack (~250 MB of openly licensed music). It takes a while
+> (~30 min); otherwise you'll see styled placeholders and hear generated drones.
 > For the Smithsonian specimen photos, put a free api.data.gov key in `.env.local` first — see
 > [`startup.md`](./startup.md).
 
@@ -57,13 +61,18 @@ src/
   navigation/           # entry placement, walkable area (collision), climb state
   controls/             # first-person pointer-lock + WASD (swappable seam for WebXR)
   interaction/          # center-screen raycast (hover / click → overlay or climb)
-  audio/                # procedural ambient soundscapes (Web Audio, per-culture chord progression, hallway blend, mute, §6.6)
+  audio/                # Web Audio engine: streamed playlists + generated fallback beds, the hallway blend (mix.ts), mute (§6.6)
   scene/                # Scene, Room, Atrium, HexShell, hallway/, walls/, props/ (StairTower), CameraRig, NavTriggers, StairClimb
   ui/                   # Hud, Overlays, Transition, overlays/ (art viewer, reader, sources)
   state/store.ts        # Zustand store (navigation, hallway/climb state, overlays, audio)
   App.tsx / main.tsx
 scripts/fetch-content.ts  # build-time fetcher: Met + Commons art + Gutenberg texts → public/content/ (§8)
 scripts/fetch-exhibits.ts # hallway exhibits: Commons plates + Smithsonian specimens (§9.1)
+scripts/fetch-music.ts    # the soundtrack: license-checked Commons recordings → public/content/music/ (§8.7)
+src/data/soundtrack.ts    # which music plays where — house music + a playlist per culture
+scripts/curation-admin.mjs # dev-only save API for the curation admin (§8.6)
+admin.html + src/admin/   # the curation admin page
+public/curation/          # your curated images + music + curation.json (committed)
 ```
 
 ## Status
@@ -85,3 +94,15 @@ climb.
 each room, a floor and wall finish per culture (flagstone, marble, tatami, shoji, zellige…) with
 real trim, artifacts in glass cases, and lantern-lit atria. Further ideas are in the design
 doc's backlog (§10, "Spruce-up review").
+
+**v0.18 — curation admin.** `npm run admin` opens a local admin page where you can pin your own
+images to any exhibit spot in any room or hallway (empty spots keep the download), and give any
+room its own music. Everything is credited and saved under `public/curation/` — commit it to keep
+it. See the design doc §8.6.
+
+**v0.19 — a real soundtrack.** The drones are gone (they're only a fallback now). The Library's
+house music is Bach — Kimiko Ishizaka's CC0 Goldberg Variations and Well-Tempered Clavier — in
+the atria, on the stair and in the hallways; every room plays openly licensed music from its own
+culture (guqin, veena, Palestrina, Hawaiian steel guitar, kulning…), or for a few rooms a field
+recording of its landscape. Walking a hallway blends room → Bach → room. `npm run fetch:music`
+downloads it; the picks and the reasoning are in `src/data/soundtrack.ts` and the design doc §8.7.
